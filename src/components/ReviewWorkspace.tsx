@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Locale } from "@/lib/i18n";
 
 import en from "@/messages/en.json";
@@ -47,6 +48,15 @@ function uploadFormData(
     xhr.send(formData);
   });
 }
+
+const card =
+  "rounded-[min(0.75vw,0.65rem)] border border-zinc-200/90 bg-white/95 shadow-[0_1px_0_0_rgba(15,23,42,0.05)] dark:border-zinc-800/90 dark:bg-zinc-900/75 dark:shadow-none";
+
+const labelText =
+  "text-[length:clamp(0.65rem,0.95vw,0.8125rem)] font-medium text-zinc-500 dark:text-zinc-400";
+
+const inputBase =
+  "w-full rounded-[min(0.5vw,0.45rem)] border border-zinc-200/95 bg-white/90 px-[4%] py-[3.5%] text-[length:clamp(0.7rem,1vw,0.875rem)] text-zinc-900 outline-none ring-indigo-500/0 transition focus:ring-2 dark:border-zinc-700 dark:bg-zinc-950/80 dark:text-zinc-100";
 
 export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const t = dictionaries[locale];
@@ -156,134 +166,157 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     return text.length > max ? `${text.slice(0, max)}\n…` : text;
   }, [changes, diffIdx, diffMode]);
 
+  const tabBtn = (active: boolean) =>
+    `rounded-[min(0.45vw,0.4rem)] px-[3.5%] py-[2.2%] text-[length:clamp(0.68rem,0.95vw,0.8125rem)] font-medium transition ${
+      active
+        ? "bg-white text-indigo-900 shadow-sm dark:bg-zinc-800 dark:text-indigo-100"
+        : "text-zinc-500 hover:bg-zinc-100/90 dark:text-zinc-500 dark:hover:bg-zinc-800/80"
+    }`;
+
   return (
-    <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-8 sm:px-6">
-      <header className="mb-10 flex flex-col gap-6 border-b border-slate-800 pb-8 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-widest text-emerald-400/90">
+    <div className="box-border grid h-[100dvh] max-h-[100dvh] w-full grid-rows-[minmax(2.75rem,9%)_minmax(0,1fr)_minmax(1.5rem,5.5%)] overflow-hidden bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
+      <header className="box-border flex min-h-0 w-full items-center justify-between gap-[2%] border-b border-zinc-200/90 px-[2.5%] py-[1.2%] dark:border-zinc-800/90">
+        <div className="min-w-0 flex-[1_1_58%]">
+          <p className="text-[length:clamp(0.58rem,0.85vw,0.7rem)] font-semibold uppercase tracking-[0.14em] text-indigo-600/90 dark:text-indigo-400/95">
             {t.nav.subtitle}
           </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+          <h1 className="truncate text-[length:clamp(1.05rem,1.75vw,1.4rem)] font-semibold tracking-tight text-zinc-900 dark:text-white">
             {t.nav.brand}
           </h1>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-400">{t.meta.description}</p>
         </div>
-        <div className="flex flex-col items-stretch gap-3 sm:items-end">
-          <label className="text-xs font-medium text-slate-500">{t.locale.label}</label>
-          <div className="flex rounded-lg border border-slate-700 bg-slate-900/80 p-1">
-            <Link
-              href="/pt"
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                locale === "pt"
-                  ? "bg-emerald-600 text-white shadow"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              {t.locale.pt}
-            </Link>
-            <Link
-              href="/en"
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                locale === "en"
-                  ? "bg-emerald-600 text-white shadow"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              {t.locale.en}
-            </Link>
+
+        <div className="flex min-h-0 w-[38%] max-w-[42%] shrink-0 items-center justify-end gap-[4%]">
+          <div className="w-[44%] min-w-0">
+            <ThemeToggle
+              labelLight={t.theme.light}
+              labelDark={t.theme.dark}
+              ariaLabel={t.theme.aria}
+            />
+          </div>
+          <div className="flex min-w-0 w-[52%] flex-col items-end gap-[8%]">
+            <span className={`${labelText} text-right`}>{t.locale.label}</span>
+            <div className="flex w-full rounded-[min(0.55vw,0.45rem)] border border-zinc-200/90 bg-white/90 p-[2%] dark:border-zinc-700 dark:bg-zinc-900/80">
+              <Link
+                href="/pt"
+                className={`flex-[1_1_50%] rounded-[min(0.35vw,0.3rem)] px-[6%] py-[5%] text-center text-[length:clamp(0.65rem,0.9vw,0.78rem)] font-medium transition ${
+                  locale === "pt"
+                    ? "bg-indigo-600 text-white dark:bg-indigo-500"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                }`}
+              >
+                {t.locale.pt}
+              </Link>
+              <Link
+                href="/en"
+                className={`flex-[1_1_50%] rounded-[min(0.35vw,0.3rem)] px-[6%] py-[5%] text-center text-[length:clamp(0.65rem,0.9vw,0.78rem)] font-medium transition ${
+                  locale === "en"
+                    ? "bg-indigo-600 text-white dark:bg-indigo-500"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                }`}
+              >
+                {t.locale.en}
+              </Link>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="grid flex-1 gap-8 lg:grid-cols-[minmax(0,340px)_1fr]">
-        <aside className="space-y-6">
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 shadow-xl shadow-black/20">
-            <h2 className="text-sm font-semibold text-white">{t.upload.title}</h2>
-            <p className="mt-2 text-xs leading-relaxed text-slate-500">{t.upload.hint}</p>
-            <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-600 bg-slate-950/50 px-4 py-8 text-center transition hover:border-emerald-500/50 hover:bg-slate-900/80">
+      <div className="flex min-h-0 w-full flex-row gap-[1.5%] overflow-hidden px-[2%] pb-[0.75%] pt-[0.75%]">
+        <aside className="flex min-h-0 w-[27%] flex-[0_0_27%] flex-col gap-[1.5%] overflow-hidden">
+          <section className={`${card} flex min-h-0 flex-[1.15_1_0%] flex-col overflow-hidden p-[4.5%]`}>
+            <h2 className="text-[length:clamp(0.78rem,1.05vw,0.9rem)] font-semibold text-zinc-900 dark:text-zinc-100">
+              {t.upload.title}
+            </h2>
+            <p className="mt-[3%] text-[length:clamp(0.62rem,0.88vw,0.75rem)] leading-snug text-zinc-500 dark:text-zinc-400">
+              {t.upload.hint}
+            </p>
+            <label className="mt-[4%] flex min-h-0 flex-[1_1_auto] cursor-pointer flex-col items-center justify-center rounded-[min(0.65vw,0.55rem)] border border-dashed border-zinc-300/95 bg-zinc-50/90 px-[4%] py-[6%] text-center transition hover:border-indigo-400/60 hover:bg-white dark:border-zinc-600 dark:bg-zinc-950/40 dark:hover:border-indigo-500/50">
               <input type="file" accept="application/json,.json" className="hidden" onChange={onPick} />
-              <span className="text-sm font-medium text-emerald-400">{t.upload.choose}</span>
-              <span className="mt-2 truncate text-xs text-slate-500">
+              <span className="text-[length:clamp(0.72rem,1vw,0.85rem)] font-semibold text-indigo-600 dark:text-indigo-400">
+                {t.upload.choose}
+              </span>
+              <span className="mt-[3%] max-w-full truncate text-[length:clamp(0.6rem,0.85vw,0.72rem)] text-zinc-500">
                 {file ? file.name : "—"}
               </span>
             </label>
           </section>
 
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 shadow-xl shadow-black/20">
-            <h2 className="text-sm font-semibold text-white">{t.options.title}</h2>
-            <label className="mt-4 block text-xs font-medium text-slate-400">{t.options.targetLang}</label>
-            <select
-              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none ring-emerald-500/0 transition focus:ring-2"
-              value={targetLanguage}
-              onChange={(e) => setTargetLanguage(e.target.value)}
-            >
+          <section className={`${card} flex min-h-0 flex-[1.25_1_0%] flex-col overflow-hidden p-[4.5%]`}>
+            <h2 className="text-[length:clamp(0.78rem,1.05vw,0.9rem)] font-semibold text-zinc-900 dark:text-zinc-100">
+              {t.options.title}
+            </h2>
+            <label className={`${labelText} mt-[4%]`}>{t.options.targetLang}</label>
+            <select className={`${inputBase} mt-[2.5%]`} value={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)}>
               <option value="pt-BR">pt-BR</option>
               <option value="en">en</option>
               <option value="es">es</option>
             </select>
-            <p className="mt-2 text-xs text-slate-500">{t.options.targetLangHint}</p>
-
-            <label className="mt-5 flex cursor-pointer items-start gap-3 text-sm text-slate-300">
+            <p className="mt-[3%] text-[length:clamp(0.58rem,0.82vw,0.72rem)] leading-snug text-zinc-500 dark:text-zinc-500">
+              {t.options.targetLangHint}
+            </p>
+            <label className="mt-[5%] flex cursor-pointer items-start gap-[3%] text-[length:clamp(0.68rem,0.95vw,0.8rem)] text-zinc-700 dark:text-zinc-300">
               <input
                 type="checkbox"
-                className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-950 text-emerald-600 focus:ring-emerald-500"
+                className="mt-[1%] h-[3.5vmin] w-[3.5vmin] min-h-[0.9rem] min-w-[0.9rem] max-h-[1.1rem] max-w-[1.1rem] rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 dark:border-zinc-600"
                 checked={treatBiblical}
                 onChange={(e) => setTreatBiblical(e.target.checked)}
               />
               <span>
-                <span className="font-medium text-white">{t.options.treatBiblical}</span>
-                <span className="mt-1 block text-xs font-normal text-slate-500">
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{t.options.treatBiblical}</span>
+                <span className="mt-[2%] block text-[length:clamp(0.58rem,0.82vw,0.72rem)] font-normal text-zinc-500 dark:text-zinc-500">
                   {t.options.treatBiblicalHint}
                 </span>
               </span>
             </label>
           </section>
 
-          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+          <div className="flex h-[12%] max-h-[15%] min-h-[7%] shrink-0 gap-[3%]">
             <button
               type="button"
               disabled={busy || !file}
               onClick={() => void runReview()}
-              className="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex flex-[1_1_58%] items-center justify-center rounded-[min(0.55vw,0.45rem)] bg-indigo-600 px-[3%] py-[3%] text-[length:clamp(0.68rem,0.95vw,0.82rem)] font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-indigo-500 dark:hover:bg-indigo-400"
             >
               {busy ? t.progress.uploading : t.actions.start}
             </button>
             <button
               type="button"
               onClick={clearAll}
-              className="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+              className="flex flex-[1_1_38%] items-center justify-center rounded-[min(0.55vw,0.45rem)] border border-zinc-200/95 bg-white px-[3%] py-[3%] text-[length:clamp(0.68rem,0.95vw,0.82rem)] font-medium text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
             >
               {t.actions.clear}
             </button>
           </div>
 
           {busy && (
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
-              <div className="flex items-center justify-between text-xs text-slate-400">
+            <div className={`${card} max-h-[22%] shrink-0 overflow-hidden p-[3.5%]`}>
+              <div className="flex items-center justify-between text-[length:clamp(0.6rem,0.85vw,0.72rem)] text-zinc-500">
                 <span>{t.progress.uploading}</span>
                 {uploadPct != null && <span>{uploadPct}%</span>}
               </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
+              <div className="mt-[3%] h-[18%] min-h-[0.35rem] overflow-hidden rounded-full bg-zinc-200/90 dark:bg-zinc-800">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 transition-all duration-300"
+                  className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-violet-500 transition-all duration-300 dark:from-indigo-500 dark:to-violet-400"
                   style={{
-                    width: uploadPct != null ? `${Math.max(8, uploadPct)}%` : "45%",
+                    width: uploadPct != null ? `${Math.max(8, uploadPct)}%` : "38%",
                   }}
                 />
               </div>
-              <p className="mt-3 text-xs text-slate-500">{t.progress.note}</p>
+              <p className="mt-[3%] text-[length:clamp(0.55rem,0.78vw,0.68rem)] text-zinc-500">{t.progress.note}</p>
             </div>
           )}
 
           {error && (
-            <div className="rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
-              {error}
+            <div
+              className="max-h-[18%] shrink-0 overflow-hidden rounded-[min(0.55vw,0.45rem)] border border-red-200/90 bg-red-50/95 px-[3.5%] py-[3%] text-[length:clamp(0.65rem,0.9vw,0.78rem)] text-red-800 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-200"
+            >
+              <span className="line-clamp-4">{error}</span>
             </div>
           )}
         </aside>
 
-        <main className="flex min-h-[480px] flex-col rounded-2xl border border-slate-800 bg-slate-900/30 shadow-inner shadow-black/30">
-          <div className="flex flex-wrap gap-2 border-b border-slate-800 px-4 py-3">
+        <main className={`${card} flex min-h-0 min-w-0 flex-[1_1_71.5%] flex-col overflow-hidden`}>
+          <div className="flex shrink-0 flex-wrap items-center gap-[2%] border-b border-zinc-200/90 px-[2.5%] py-[1.8%] dark:border-zinc-800/90">
             {(
               [
                 ["result", t.tabs.result],
@@ -291,58 +324,45 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
                 ["original", t.tabs.original],
               ] as const
             ).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setActiveTab(id)}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-                  activeTab === id
-                    ? "bg-slate-800 text-white"
-                    : "text-slate-500 hover:bg-slate-800/60 hover:text-slate-200"
-                }`}
-              >
+              <button key={id} type="button" onClick={() => setActiveTab(id)} className={tabBtn(activeTab === id)}>
                 {label}
               </button>
             ))}
-            <div className="ml-auto flex items-center gap-2">
-              <span className="text-xs text-slate-500">
+            <div className="ml-auto flex min-w-0 items-center gap-[3%]">
+              <span className="truncate text-[length:clamp(0.6rem,0.85vw,0.72rem)] text-zinc-500">
                 {t.changes.count.replace("{count}", String(changeCount))}
               </span>
               <button
                 type="button"
                 disabled={!resultJson}
                 onClick={downloadResult}
-                className="rounded-lg bg-emerald-600/90 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
+                className="shrink-0 rounded-[min(0.45vw,0.4rem)] bg-indigo-600 px-[3.5%] py-[2.2%] text-[length:clamp(0.6rem,0.82vw,0.72rem)] font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-indigo-500"
               >
                 {t.actions.download}
               </button>
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col p-4">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-[2%]">
             {activeTab === "result" && (
-              <pre className="max-h-[560px] flex-1 overflow-auto rounded-xl bg-slate-950/80 p-4 text-xs leading-relaxed text-emerald-100/90 ring-1 ring-slate-800">
-                {resultJson ?? (
-                  <span className="text-slate-600">{t.progress.idle}</span>
-                )}
+              <pre className="min-h-0 flex-1 overflow-y-auto overflow-x-auto rounded-[min(0.55vw,0.45rem)] bg-zinc-50/95 p-[2.5%] font-mono text-[length:clamp(0.58rem,0.88vw,0.78rem)] leading-relaxed text-indigo-950 ring-1 ring-zinc-200/90 dark:bg-zinc-950/80 dark:text-emerald-100/95 dark:ring-zinc-800">
+                {resultJson ?? <span className="text-zinc-400">{t.progress.idle}</span>}
               </pre>
             )}
 
             {activeTab === "original" && (
-              <pre className="max-h-[560px] flex-1 overflow-auto rounded-xl bg-slate-950/80 p-4 text-xs leading-relaxed text-slate-300 ring-1 ring-slate-800">
-                {originalJson ?? (
-                  <span className="text-slate-600">{t.progress.idle}</span>
-                )}
+              <pre className="min-h-0 flex-1 overflow-y-auto overflow-x-auto rounded-[min(0.55vw,0.45rem)] bg-zinc-50/95 p-[2.5%] font-mono text-[length:clamp(0.58rem,0.88vw,0.78rem)] leading-relaxed text-zinc-800 ring-1 ring-zinc-200/90 dark:bg-zinc-950/80 dark:text-zinc-300 dark:ring-zinc-800">
+                {originalJson ?? <span className="text-zinc-400">{t.progress.idle}</span>}
               </pre>
             )}
 
             {activeTab === "changes" && (
-              <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
-                <div className="lg:w-2/5">
+              <div className="flex min-h-0 flex-1 gap-[2%] overflow-hidden">
+                <div className="min-h-0 w-[38%] flex-[0_0_38%] overflow-hidden">
                   {changes.length === 0 ? (
-                    <p className="text-sm text-slate-500">{t.changes.empty}</p>
+                    <p className="text-[length:clamp(0.68rem,0.95vw,0.8rem)] text-zinc-500">{t.changes.empty}</p>
                   ) : (
-                    <ul className="max-h-[520px] space-y-1 overflow-auto pr-1 text-xs">
+                    <ul className="h-full overflow-y-auto overflow-x-hidden pr-[2%] text-[length:clamp(0.58rem,0.85vw,0.75rem)]">
                       {changes.map((c, i) => (
                         <li key={`${c.path}-${i}`}>
                           <button
@@ -351,28 +371,32 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
                               setDiffIdx(i);
                               setDiffMode("after");
                             }}
-                            className={`w-full rounded-lg px-2 py-2 text-left transition ${
+                            className={`mb-[2%] w-full rounded-[min(0.45vw,0.4rem)] px-[3%] py-[2.5%] text-left transition ${
                               diffIdx === i
-                                ? "bg-emerald-900/40 text-emerald-100"
-                                : "text-slate-400 hover:bg-slate-800/80 hover:text-slate-200"
+                                ? "bg-indigo-100/95 text-indigo-950 dark:bg-indigo-950/60 dark:text-indigo-100"
+                                : "text-zinc-600 hover:bg-zinc-100/90 dark:text-zinc-400 dark:hover:bg-zinc-800/80"
                             }`}
                           >
-                            <span className="break-all font-mono text-[11px] text-slate-300">{c.path}</span>
+                            <span className="break-all font-mono text-[length:clamp(0.55rem,0.8vw,0.7rem)] text-zinc-800 dark:text-zinc-300">
+                              {c.path}
+                            </span>
                           </button>
                         </li>
                       ))}
                     </ul>
                   )}
                 </div>
-                <div className="flex min-h-0 flex-1 flex-col rounded-xl bg-slate-950/80 p-4 ring-1 ring-slate-800">
-                  <div className="mb-3 flex flex-wrap items-center gap-3">
-                    <span className="text-xs font-medium text-slate-500">{t.diff.toggle}</span>
-                    <div className="flex rounded-lg border border-slate-700 p-0.5">
+                <div className="flex min-h-0 min-w-0 flex-[1_1_60%] flex-col overflow-hidden rounded-[min(0.55vw,0.45rem)] bg-zinc-50/95 p-[2.5%] ring-1 ring-zinc-200/90 dark:bg-zinc-950/70 dark:ring-zinc-800">
+                  <div className="mb-[2%] flex shrink-0 flex-wrap items-center gap-[3%]">
+                    <span className="text-[length:clamp(0.6rem,0.85vw,0.72rem)] font-medium text-zinc-500">{t.diff.toggle}</span>
+                    <div className="flex rounded-[min(0.45vw,0.4rem)] border border-zinc-200/90 p-[1%] dark:border-zinc-700">
                       <button
                         type="button"
                         onClick={() => setDiffMode("before")}
-                        className={`rounded-md px-2 py-1 text-xs font-medium ${
-                          diffMode === "before" ? "bg-slate-700 text-white" : "text-slate-500"
+                        className={`rounded-[min(0.3vw,0.25rem)] px-[4%] py-[2.5%] text-[length:clamp(0.58rem,0.82vw,0.72rem)] font-medium ${
+                          diffMode === "before"
+                            ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white"
+                            : "text-zinc-500"
                         }`}
                       >
                         {t.diff.showOriginal}
@@ -380,39 +404,39 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
                       <button
                         type="button"
                         onClick={() => setDiffMode("after")}
-                        className={`rounded-md px-2 py-1 text-xs font-medium ${
-                          diffMode === "after" ? "bg-slate-700 text-white" : "text-slate-500"
+                        className={`rounded-[min(0.3vw,0.25rem)] px-[4%] py-[2.5%] text-[length:clamp(0.58rem,0.82vw,0.72rem)] font-medium ${
+                          diffMode === "after"
+                            ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white"
+                            : "text-zinc-500"
                         }`}
                       >
                         {t.diff.showCorrected}
                       </button>
                     </div>
                   </div>
-                  <pre className="max-h-[460px] flex-1 overflow-auto whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-200">
-                    {diffSnippet ?? (
-                      <span className="text-slate-600">{t.changes.empty}</span>
-                    )}
+                  <pre className="min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap break-words text-[length:clamp(0.58rem,0.88vw,0.78rem)] leading-relaxed text-zinc-800 dark:text-zinc-200">
+                    {diffSnippet ?? <span className="text-zinc-400">{t.changes.empty}</span>}
                   </pre>
                 </div>
               </div>
             )}
           </div>
 
-          <footer className="border-t border-slate-800 px-4 py-3 text-center text-xs text-slate-600">
+          <footer className="shrink-0 border-t border-zinc-200/90 px-[2.5%] py-[1.2%] text-center text-[length:clamp(0.55rem,0.78vw,0.68rem)] text-zinc-500 dark:border-zinc-800/90 dark:text-zinc-500">
             {t.footer.note}
           </footer>
         </main>
       </div>
 
-      <p className="mt-8 text-center text-[11px] text-slate-600">
-        API: {API_BASE} ·{" "}
-        <Link
-          href={locale === "pt" ? "/en" : "/pt"}
-          className="text-emerald-500/90 hover:underline"
-        >
+      <div className="flex min-h-0 shrink-0 items-center justify-center gap-[1.5%] border-t border-zinc-200/90 px-[2%] py-[0.9%] text-[length:clamp(0.55rem,0.78vw,0.68rem)] text-zinc-500 dark:border-zinc-800/90 dark:text-zinc-500">
+        <span className="truncate">
+          API: {API_BASE}
+        </span>
+        <span className="text-zinc-300 dark:text-zinc-600">·</span>
+        <Link href={locale === "pt" ? "/en" : "/pt"} className="shrink-0 font-medium text-indigo-600 hover:underline dark:text-indigo-400">
           {locale === "pt" ? "English" : "Português (Brasil)"}
         </Link>
-      </p>
+      </div>
     </div>
   );
 }

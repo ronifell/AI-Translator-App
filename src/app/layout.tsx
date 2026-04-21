@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
 
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { defaultLocale, locales, type Locale } from "@/lib/i18n";
 
 import "./globals.css";
@@ -33,11 +34,11 @@ export default async function RootLayout({
   const htmlLang = locale === "pt" ? "pt-BR" : "en";
 
   return (
-    <html lang={htmlLang} suppressHydrationWarning>
+    <html lang={htmlLang} className="h-full" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-slate-950 font-sans text-slate-100 antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} h-full overflow-hidden bg-zinc-50 font-sans text-zinc-900 antialiased transition-colors dark:bg-zinc-950 dark:text-zinc-50`}
       >
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

@@ -25,5 +25,5 @@ export default async function LocaleLayout({ children, params }: Props) {
   if (!locales.includes(locale as Locale)) {
     notFound();
   }
-  return children;
+  return <div className="h-full min-h-0">{children}</div>;
 }

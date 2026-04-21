@@ -12,6 +12,11 @@
     "pt": "Português (Brasil)",
     "en": "English"
   },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "aria": "Toggle color theme"
+  },
   "upload": {
     "title": "Upload JSON",
     "hint": "Drop a .json file or click to browse. Large files may take several minutes.",

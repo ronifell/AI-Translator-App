@@ -12,5 +12,9 @@ export default async function Home({ params }: Props) {
   if (!locales.includes(locale as Locale)) {
     notFound();
   }
-  return <ReviewWorkspace locale={locale as Locale} />;
+  return (
+    <div className="h-full min-h-0">
+      <ReviewWorkspace locale={locale as Locale} />
+    </div>
+  );
 }

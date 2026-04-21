@@ -12,6 +12,11 @@
     "pt": "Português (Brasil)",
     "en": "English"
   },
+  "theme": {
+    "light": "Claro",
+    "dark": "Escuro",
+    "aria": "Alternar tema de cores"
+  },
   "upload": {
     "title": "Enviar JSON",
     "hint": "Arraste um arquivo .json ou clique para escolher. Arquivos grandes podem levar vários minutos.",
