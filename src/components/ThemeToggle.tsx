@@ -3,6 +3,8 @@
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
+import { ui, uiSegmentItem } from "@/lib/ui";
+
 type Props = {
   labelLight: string;
   labelDark: string;
@@ -22,34 +24,34 @@ export function ThemeToggle({ labelLight, labelDark, ariaLabel }: Props) {
   if (!mounted) {
     return (
       <div
-        className="h-[5.5vmin] min-h-[2rem] w-full max-w-[100%] rounded-[min(0.55vw,0.45rem)] bg-zinc-200/90 dark:bg-zinc-800/80"
+        className="h-full min-h-[2.5rem] w-full rounded-xl border border-zinc-200/80 bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-800/80"
         aria-hidden
       />
     );
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+    <div
+      role="group"
       aria-label={ariaLabel}
-      aria-pressed={isDark}
-      className="inline-flex h-[5.5vmin] min-h-[2rem] max-h-[2.75rem] w-full max-w-[100%] items-center justify-center gap-[5%] rounded-[min(0.55vw,0.45rem)] border border-zinc-200/90 bg-white/90 px-[3%] text-[length:clamp(0.62rem,0.9vw,0.78rem)] font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/90 dark:text-zinc-200 dark:hover:bg-zinc-800/90"
+      className={`flex h-full min-h-[2.5rem] w-full max-w-full items-stretch ${ui.segmented}`}
     >
-      <span
-        className={`rounded-[min(0.35vw,0.3rem)] px-[5%] py-[4%] transition ${
-          !isDark ? "bg-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-100" : "text-zinc-500"
-        }`}
+      <button
+        type="button"
+        onClick={() => setTheme("light")}
+        aria-pressed={!isDark}
+        className={`${uiSegmentItem(!isDark)} ${ui.focusRing}`}
       >
         {labelLight}
-      </span>
-      <span
-        className={`rounded-[min(0.35vw,0.3rem)] px-[5%] py-[4%] transition ${
-          isDark ? "bg-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-100" : "text-zinc-500"
-        }`}
+      </button>
+      <button
+        type="button"
+        onClick={() => setTheme("dark")}
+        aria-pressed={isDark}
+        className={`${uiSegmentItem(isDark)} ${ui.focusRing}`}
       >
         {labelDark}
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }
