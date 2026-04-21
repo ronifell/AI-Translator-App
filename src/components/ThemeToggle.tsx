@@ -24,7 +24,7 @@ export function ThemeToggle({ labelLight, labelDark, ariaLabel }: Props) {
   if (!mounted) {
     return (
       <div
-        className="h-full min-h-[2.5rem] w-full rounded-xl border border-zinc-200/80 bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-800/80"
+        className="h-full min-h-[2.75rem] w-full rounded-2xl border border-slate-200/90 bg-slate-100/90 shadow-inner dark:border-slate-700 dark:bg-slate-900/90"
         aria-hidden
       />
     );

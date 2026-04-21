@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} h-full overflow-hidden bg-zinc-50 font-sans text-zinc-900 antialiased transition-[background-color,color] duration-200 dark:bg-zinc-950 dark:text-zinc-50`}
+        className={`${geistSans.variable} ${geistMono.variable} h-full overflow-hidden bg-slate-50 font-sans text-slate-900 antialiased transition-[background-color,color] duration-300 dark:bg-slate-950 dark:text-slate-100`}
       >
         <DocumentLang />
         <ThemeProvider>{children}</ThemeProvider>

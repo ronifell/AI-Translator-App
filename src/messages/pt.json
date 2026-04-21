@@ -41,6 +41,12 @@
     "uploading": "Enviando e processando…",
     "note": "Arquivos muito grandes podem demorar. Não feche esta página."
   },
+  "thinking": {
+    "title": "Revisando seu JSON",
+    "reading": "Lendo e enviando",
+    "thinking": "Analisando texto e aplicando correções…",
+    "hint": "Documentos grandes podem levar vários minutos. Mantenha esta página aberta; mostraremos o resultado quando estiver pronto."
+  },
   "tabs": {
     "result": "JSON revisado",
     "changes": "Registro de alterações",
