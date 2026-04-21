@@ -320,14 +320,22 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
 
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
             {activeTab === "result" && (
-              <pre className={`${ui.insetResult} min-h-0 flex-1 overflow-y-auto overflow-x-auto p-4`}>
-                {resultJson ?? <span className="text-zinc-400">{t.progress.idle}</span>}
+              <pre
+                className={`${ui.insetResult} min-h-0 flex-1 overflow-y-auto overflow-x-auto p-4 border-zinc-200/90 bg-zinc-50 text-indigo-950 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100`}
+              >
+                {resultJson ?? (
+                  <span className="text-zinc-500 dark:text-zinc-400">{t.progress.idle}</span>
+                )}
               </pre>
             )}
 
             {activeTab === "original" && (
-              <pre className={`${ui.inset} min-h-0 flex-1 overflow-y-auto overflow-x-auto p-4`}>
-                {originalJson ?? <span className="text-zinc-400">{t.progress.idle}</span>}
+              <pre
+                className={`${ui.inset} min-h-0 flex-1 overflow-y-auto overflow-x-auto p-4 border-zinc-200/90 bg-zinc-50 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200`}
+              >
+                {originalJson ?? (
+                  <span className="text-zinc-500 dark:text-zinc-400">{t.progress.idle}</span>
+                )}
               </pre>
             )}
 
@@ -379,8 +387,10 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
                       </button>
                     </div>
                   </div>
-                  <pre className="min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed">
-                    {diffSnippet ?? <span className="text-zinc-400">{t.changes.empty}</span>}
+                  <pre className="min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-800 dark:text-zinc-100">
+                    {diffSnippet ?? (
+                      <span className="text-zinc-500 dark:text-zinc-400">{t.changes.empty}</span>
+                    )}
                   </pre>
                 </div>
               </div>

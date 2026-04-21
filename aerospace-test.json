@@ -1,0 +1,83 @@
+{
+  "metadata": {
+    "projeto": "Aerospace Scientific Review Dataset",
+    "idioma_alvo": "pt-BR",
+    "dominio": "aeroespacial",
+    "versao": "1.0"
+  },
+  "colecao": [
+    {
+      "__id__": "Orbital Mechanics 101",
+      "traduzido_google": true,
+      "titulo": "Fundamentos da dinamica orbtial",
+      "texto": "A mecanica orbital descreve como satelites e espacnaves se movem sob a gravidade. Em orbita baixa, a velocidade tipica e perto de 7,8 km/s e o arrasto atmosferico pode causar decaimento gradual da orbita.",
+      "texto_ingles": "Orbital mechanics describes how satellites and spacecraft move under gravity. In low Earth orbit, typical speed is close to 7.8 km/s and atmospheric drag can cause gradual orbital decay.",
+      "comentarios": [
+        {
+          "texto": "A segunda lei de Kepler indica que a linha entre o corpo central e o satelite varre areas iguais em tempos iguais, o que implica velocidade variavel ao longo da orbita eliptica.",
+          "titulo": ""
+        },
+        {
+          "texto": "A manobra de Hohmann usa duas queimas para transferir uma nave entre orbitas coplanares circulares de forma energeticamente eficiente."
+        }
+      ],
+      "qumran": {
+        "secao_a": {
+          "texto": "Motores de foguete quimicos convertem energia quimica em empuxo atraves da expulsao de gases de alta velocidade pelo bocal.",
+          "observacao": "O impulso especifico, medido em segundos, e um parametro central para comparar desempenho de propulsores."
+        },
+        "secao_b": [
+          {
+            "titulo": "Reentrada atmosferica controladda",
+            "texto": "Durante a reentrada, escudos termicos ablativos ou reutilizaveis protegem a estrutura da nave contra aquecimento aerodinamico extremo."
+          }
+        ]
+      }
+    },
+    {
+      "__id__": "1. Esra",
+      "titulo": "Ensaios de sistemas de guia e controle",
+      "texto": "Sistemas de guia, navegacao e controle combinam sensores inerciais, GNSS e algoritmos de estimacao para manter trajetorias estaveis em aeronaves e veiculos espaciais.",
+      "texto_ingles": "Guidance, navigation and control systems combine inertial sensors, GNSS and estimation algorithms to maintain stable trajectories in aircraft and spacecraft.",
+      "comentarios": [
+        {
+          "texto": "Filtros de Kalman sao usados para fusao de dados de sensores, reduzindo ruido e melhorando estimativas de atitude e velocidade.",
+          "titulo": "Filtragem estatistica embarcada"
+        },
+        {
+          "texto": "A estabilidade de um foguete depende da relacao entre centro de massa e centro de pressao, alem da autoridade dos atuadores de controle."
+        }
+      ],
+      "qumran": {
+        "materiais": {
+          "texto": "Ligas de titanio e compozitos de fibra de carbono sao amplamente usados para reduzir massa estrutural mantendo alta resistencia mecanica e termica."
+        },
+        "propulsao_eletrica": {
+          "descricao": "Propulsores ionicos operam com alto impulso especifico e baixo empuxo, adequados para missoes de longa duracao no espaco profundo."
+        }
+      },
+      "secoes": [
+        {
+          "titulo": "Telemetria e comunicacao",
+          "texto": "Links de telemetria em banda S e X transmitem estado de subsistemas, parametros de saude e dados cientificos para estacoes de solo."
+        },
+        {
+          "texto": "Arquiteturas tolerantes a falhas usam redundancia fria ou quente para aumentar confiabilidade em missões criticas."
+        }
+      ]
+    },
+    {
+      "__id__": "Deep Space Operations",
+      "fonte_traducao": "google",
+      "titulo": "Operacoes automatizadas em voo interplanetario",
+      "texto": "Sondas interplanetarias usam janelas de lancamento e assistencias gravitacionais para otimizar delta-v e tempo de viagem.",
+      "texto_ingles": "Interplanetary probes use launch windows and gravity assists to optimize delta-v and travel time.",
+      "comentarios": [
+        {
+          "titulo": "",
+          "texto": "Comunicao de espaco profundo sofre atrasos significativos; por isso, autonomia de bordo e essencial para resposta rapida a eventos."
+        }
+      ]
+    }
+  ]
+}

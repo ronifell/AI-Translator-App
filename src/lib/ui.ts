@@ -16,9 +16,9 @@ export const ui = {
   inset:
     "rounded-lg border border-zinc-200/90 bg-zinc-50 font-mono text-xs leading-relaxed text-zinc-800 ring-1 ring-zinc-950/[0.03] dark:border-zinc-800 dark:bg-zinc-950/88 dark:text-zinc-200 dark:ring-white/[0.04]",
 
-  /** Reviewed JSON (slight accent in dark mode) */
+  /** Reviewed JSON (readable contrast in light + dark; avoid near-white on pale panels) */
   insetResult:
-    "rounded-lg border border-zinc-200/90 bg-zinc-50 font-mono text-xs leading-relaxed text-indigo-950 ring-1 ring-zinc-950/[0.03] dark:border-zinc-800 dark:bg-zinc-950/88 dark:text-emerald-100/95 dark:ring-white/[0.04]",
+    "rounded-lg border border-zinc-200/90 bg-zinc-50 font-mono text-xs leading-relaxed text-indigo-950 ring-1 ring-zinc-950/[0.03] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-white/[0.04]",
 
   /** Section headings */
   heading: "text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50",
