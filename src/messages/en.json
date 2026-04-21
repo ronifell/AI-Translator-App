@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "title": "AI Multilingual Text Review",
+    "description": "Spelling, grammar, and syntax correction for biblical JSON and commentary, with full change tracking."
+  },
+  "nav": {
+    "brand": "AI Review",
+    "subtitle": "Sacred texts & commentary"
+  },
+  "locale": {
+    "label": "Interface language",
+    "pt": "Português (Brasil)",
+    "en": "English"
+  },
+  "upload": {
+    "title": "Upload JSON",
+    "hint": "Drop a .json file or click to browse. Large files may take several minutes.",
+    "choose": "Choose file",
+    "selected": "Selected file"
+  },
+  "options": {
+    "title": "Review options",
+    "targetLang": "Target language (hint for the model)",
+    "targetLangHint": "Used for minimal fixes when a short passage is in the wrong language.",
+    "treatBiblical": "Treat all biblical \"texto\" fields as Google-translated",
+    "treatBiblicalHint": "Use when your JSON lacks metadata (traduzido_google, fonte, etc.). Otherwise only Google-marked \"texto\" or content after \"1. Esra\" is reviewed."
+  },
+  "actions": {
+    "start": "Start AI review",
+    "cancel": "Cancel",
+    "download": "Download reviewed JSON",
+    "clear": "Clear"
+  },
+  "progress": {
+    "idle": "Waiting for file",
+    "uploading": "Uploading and processing…",
+    "note": "Very large files may take a while. Do not close this page."
+  },
+  "tabs": {
+    "result": "Reviewed JSON",
+    "changes": "Change log",
+    "original": "Original JSON"
+  },
+  "changes": {
+    "count": "{count} changes",
+    "path": "Path",
+    "before": "Before",
+    "after": "After",
+    "empty": "No changes recorded (text was already acceptable or nothing was eligible)."
+  },
+  "diff": {
+    "toggle": "Compare before / after",
+    "showOriginal": "Show original",
+    "showCorrected": "Show corrected"
+  },
+  "errors": {
+    "noFile": "Select a JSON file.",
+    "network": "Network or server error. Ensure the API is running and OPENAI_API_KEY is set.",
+    "invalidJson": "Invalid JSON."
+  },
+  "footer": {
+    "note": "Only spelling, grammar, and syntax. Meaning and integrity of the text are preserved."
+  }
+}

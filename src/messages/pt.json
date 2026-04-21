@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "title": "Revisor de Texto Multilíngue com IA",
+    "description": "Correção ortográfica, gramatical e sintática de JSON bíblico e comentários, com rastreio de alterações."
+  },
+  "nav": {
+    "brand": "Revisor IA",
+    "subtitle": "Textos sagrados e comentários"
+  },
+  "locale": {
+    "label": "Idioma da interface",
+    "pt": "Português (Brasil)",
+    "en": "English"
+  },
+  "upload": {
+    "title": "Enviar JSON",
+    "hint": "Arraste um arquivo .json ou clique para escolher. Arquivos grandes podem levar vários minutos.",
+    "choose": "Escolher arquivo",
+    "selected": "Arquivo selecionado"
+  },
+  "options": {
+    "title": "Opções de revisão",
+    "targetLang": "Idioma alvo (dica para a IA)",
+    "targetLangHint": "Usado para correções mínimas de trechos no idioma errado.",
+    "treatBiblical": "Tratar todo texto bíblico (campo \"texto\") como traduzido pelo Google",
+    "treatBiblicalHint": "Use quando o JSON não tiver metadados (traduzido_google, fonte, etc.). Caso contrário, só \"texto\" marcado como Google ou após \"1. Esra\" é revisado."
+  },
+  "actions": {
+    "start": "Iniciar revisão com IA",
+    "cancel": "Cancelar",
+    "download": "Baixar JSON revisado",
+    "clear": "Limpar"
+  },
+  "progress": {
+    "idle": "Aguardando arquivo",
+    "uploading": "Enviando e processando…",
+    "note": "Arquivos muito grandes podem demorar. Não feche esta página."
+  },
+  "tabs": {
+    "result": "JSON revisado",
+    "changes": "Registro de alterações",
+    "original": "JSON original"
+  },
+  "changes": {
+    "count": "{count} alterações",
+    "path": "Caminho",
+    "before": "Antes",
+    "after": "Depois",
+    "empty": "Nenhuma alteração registrada (texto já estava correto ou nada foi elegível para revisão)."
+  },
+  "diff": {
+    "toggle": "Comparar antes/depois",
+    "showOriginal": "Mostrar original",
+    "showCorrected": "Mostrar corrigido"
+  },
+  "errors": {
+    "noFile": "Selecione um arquivo JSON.",
+    "network": "Falha na rede ou no servidor. Verifique se a API está em execução e a chave OPENAI_API_KEY.",
+    "invalidJson": "JSON inválido."
+  },
+  "footer": {
+    "note": "Apenas ortografia, gramática e sintaxe. Significado e integridade do texto são preservados."
+  }
+}
