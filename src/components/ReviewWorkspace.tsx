@@ -444,7 +444,6 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
             title: t.thinking.title,
             reading: t.thinking.reading,
             thinking: t.thinking.thinking,
-            hint: t.thinking.hint,
           }}
         />
       )}

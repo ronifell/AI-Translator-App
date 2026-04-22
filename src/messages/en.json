@@ -44,8 +44,7 @@
   "thinking": {
     "title": "Reviewing your JSON",
     "reading": "Reading & sending",
-    "thinking": "Analyzing text and applying corrections…",
-    "hint": "Large documents can take several minutes. You can leave this tab open—we’ll show results when ready."
+    "thinking": "Analyzing text and applying corrections…"
   },
   "tabs": {
     "result": "Reviewed JSON",
