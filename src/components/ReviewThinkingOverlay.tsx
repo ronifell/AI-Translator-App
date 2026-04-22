@@ -26,30 +26,85 @@ function useStreamingSnippet(source: string, active: boolean, windowLen: number,
 
   useEffect(() => {
     if (!active || !source.length) return;
-    const len = Math.min(source.length, 32000);
+    const len = source.length;
     const maxStart = Math.max(len - windowLen, 0);
+    // Adaptive stride: short text moves slowly, large JSON still reaches end in a practical time.
+    const stride = Math.max(4, Math.ceil(len / 1800));
     const id = window.setInterval(() => {
       setStart((s) => {
-        const next = s + 4;
-        return next > maxStart ? 0 : next;
+        const next = s + stride;
+        return next > maxStart ? maxStart : next;
       });
     }, stepMs);
     return () => window.clearInterval(id);
   }, [active, source, windowLen, stepMs]);
 
-  return useMemo(() => {
+  const snippet = useMemo(() => {
     if (!source) return "";
     return source.slice(start, start + windowLen);
   }, [source, start, windowLen]);
+
+  return { snippet, start };
+}
+
+function countLineStarts(text: string): number[] {
+  const starts = [0];
+  for (let i = 0; i < text.length; i += 1) {
+    if (text.charCodeAt(i) === 10) starts.push(i + 1);
+  }
+  return starts;
+}
+
+function upperBound(arr: number[], value: number): number {
+  let lo = 0;
+  let hi = arr.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (arr[mid] <= value) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
 }
 
 export function ReviewThinkingOverlay({ open, jsonSample, uploadPct, labels }: Props) {
   const [mounted, setMounted] = useState(false);
-  const snippet = useStreamingSnippet(jsonSample, open, 220, 42);
+  const { snippet, start } = useStreamingSnippet(jsonSample, open, 220, 42);
+  const [animatedPct, setAnimatedPct] = useState(0);
+  const lineStarts = useMemo(() => countLineStarts(jsonSample), [jsonSample]);
+  const totalLines = lineStarts.length;
+  const readLine = useMemo(() => {
+    if (!totalLines) return 0;
+    return Math.max(1, upperBound(lineStarts, start));
+  }, [lineStarts, start, totalLines]);
+  const lineReadPct = useMemo(() => {
+    if (!totalLines) return 0;
+    return (readLine / totalLines) * 100;
+  }, [readLine, totalLines]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!open) {
+      setAnimatedPct(0);
+      return;
+    }
+
+    const id = window.setInterval(() => {
+      setAnimatedPct((prev) => {
+        const target = Math.max(0, Math.min(100, lineReadPct));
+        if (Math.abs(prev - target) < 0.05) return target;
+
+        // Animate toward real line-read progress from the flowing JSON stream.
+        const step = Math.max(0.35, Math.abs(target - prev) * 0.28);
+        if (target > prev) return Math.min(target, prev + step);
+        return Math.max(target, prev - step);
+      });
+    }, 80);
+
+    return () => window.clearInterval(id);
+  }, [open, lineReadPct]);
 
   if (!mounted || !open) return null;
 
@@ -87,9 +142,17 @@ export function ReviewThinkingOverlay({ open, jsonSample, uploadPct, labels }: P
           <h2 className="text-lg font-bold tracking-tight text-slate-900 drop-shadow-sm dark:text-white">
             {labels.title}
           </h2>
-          <p className="mt-2 bg-gradient-to-r from-indigo-700 via-violet-700 to-indigo-700 bg-clip-text text-sm font-bold text-transparent animate-thinking-shimmer dark:from-indigo-300 dark:via-white dark:to-indigo-300">
-            {uploadPct != null ? `${labels.reading} · ${uploadPct}%` : labels.thinking}
-          </p>
+          <div className="mx-auto mt-3 w-[min(22rem,70vw)]">
+            <div className="h-1.5 overflow-hidden rounded-full bg-slate-300/60 dark:bg-slate-700/70">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-violet-500 via-indigo-500 to-cyan-400 transition-[width] duration-150 ease-out"
+                style={{ width: `${Math.max(0, Math.min(100, animatedPct))}%` }}
+              />
+            </div>
+            <p className="mt-1.5 text-center font-mono text-[0.75rem] font-semibold text-slate-700 dark:text-slate-200">
+              {animatedPct.toFixed(1)}%
+            </p>
+          </div>
         </div>
 
         {/* Flowing JSON — fixed height (stable center); wrap long lines; no horizontal scrollbar */}

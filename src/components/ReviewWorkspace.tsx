@@ -108,7 +108,7 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     setChanges([]);
     try {
       const rawJson = await readOriginal();
-      setThinkingSample(rawJson.slice(0, 16000));
+      setThinkingSample(rawJson);
       setBusy(true);
       setUploadPct(0);
       const fd = new FormData();
