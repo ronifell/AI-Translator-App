@@ -7,12 +7,29 @@ export type ThinkingLabels = {
   title: string;
   reading: string;
   thinking: string;
+  currentPath: string;
+  noPath: string;
+  recentChanges: string;
+  noRecentChanges: string;
+  speed: string;
+  eta: string;
+};
+
+type LiveChange = {
+  path: string;
+  before_preview: string;
+  after_preview: string;
 };
 
 type Props = {
   open: boolean;
   jsonSample: string;
   uploadPct: number | null;
+  backendPct: number | null;
+  currentPath: string | null;
+  recentChanges: LiveChange[];
+  processingSpeed: number | null;
+  etaSeconds: number | null;
   labels: ThinkingLabels;
 };
 
@@ -66,7 +83,28 @@ function upperBound(arr: number[], value: number): number {
   return lo;
 }
 
-export function ReviewThinkingOverlay({ open, jsonSample, uploadPct, labels }: Props) {
+export function ReviewThinkingOverlay({
+  open,
+  jsonSample,
+  uploadPct,
+  backendPct,
+  currentPath,
+  recentChanges,
+  processingSpeed,
+  etaSeconds,
+  labels,
+}: Props) {
+  const etaLabel = useMemo(() => {
+    if (etaSeconds === null || !Number.isFinite(etaSeconds) || etaSeconds < 0) return "—";
+    const secs = Math.round(etaSeconds);
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  }, [etaSeconds]);
+
   const [mounted, setMounted] = useState(false);
   const { snippet, start } = useStreamingSnippet(jsonSample, open, 220, 42);
   const [animatedPct, setAnimatedPct] = useState(0);
@@ -81,6 +119,12 @@ export function ReviewThinkingOverlay({ open, jsonSample, uploadPct, labels }: P
     return (readLine / totalLines) * 100;
   }, [readLine, totalLines]);
 
+  const resolvedPct = useMemo(() => {
+    if (typeof backendPct === "number") return backendPct;
+    if (typeof uploadPct === "number" && uploadPct < 100) return uploadPct;
+    return lineReadPct;
+  }, [backendPct, uploadPct, lineReadPct]);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -93,7 +137,7 @@ export function ReviewThinkingOverlay({ open, jsonSample, uploadPct, labels }: P
 
     const id = window.setInterval(() => {
       setAnimatedPct((prev) => {
-        const target = Math.max(0, Math.min(100, lineReadPct));
+        const target = Math.max(0, Math.min(100, resolvedPct));
         if (Math.abs(prev - target) < 0.05) return target;
 
         // Animate toward real line-read progress from the flowing JSON stream.
@@ -104,7 +148,7 @@ export function ReviewThinkingOverlay({ open, jsonSample, uploadPct, labels }: P
     }, 80);
 
     return () => window.clearInterval(id);
-  }, [open, lineReadPct]);
+  }, [open, resolvedPct]);
 
   if (!mounted || !open) return null;
 
@@ -124,7 +168,7 @@ export function ReviewThinkingOverlay({ open, jsonSample, uploadPct, labels }: P
         Vertically centered block. Stream uses a fixed height so flex centering does not jump when
         JSON changes; lines wrap (no horizontal scrollbar).
       */}
-      <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col items-center px-6 py-8">
+      <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-col items-center px-6 py-8">
         {/* Orb + focal point — bold / high-contrast */}
         <div className="relative mb-8 shrink-0 flex h-28 w-28 items-center justify-center">
           <div className="absolute inset-0 animate-thinking-breathe rounded-full bg-gradient-to-br from-indigo-400/40 via-violet-500/35 to-fuchsia-400/40 blur-xl dark:from-indigo-500/45 dark:via-violet-500/40 dark:to-fuchsia-500/45" />
@@ -153,6 +197,22 @@ export function ReviewThinkingOverlay({ open, jsonSample, uploadPct, labels }: P
               {animatedPct.toFixed(1)}%
             </p>
           </div>
+          <p className="mt-2 max-w-[min(42rem,92vw)] truncate text-xs font-medium text-slate-700 dark:text-slate-200">
+            {labels.currentPath}{" "}
+            <span className="font-mono text-[0.68rem] text-slate-600 dark:text-slate-300">
+              {currentPath ?? labels.noPath}
+            </span>
+          </p>
+          <p className="mt-1 text-[0.72rem] font-medium text-slate-600 dark:text-slate-300">
+            {labels.speed}{" "}
+            <span className="font-mono">
+              {processingSpeed !== null && Number.isFinite(processingSpeed)
+                ? `${processingSpeed.toFixed(2)} u/s`
+                : "—"}
+            </span>
+            {" · "}
+            {labels.eta} <span className="font-mono">{etaLabel}</span>
+          </p>
         </div>
 
         {/* Flowing JSON — fixed height (stable center); wrap long lines; no horizontal scrollbar */}
@@ -162,6 +222,26 @@ export function ReviewThinkingOverlay({ open, jsonSample, uploadPct, labels }: P
           <span className="thinking-cursor mr-0.5 inline-block h-4 w-px translate-y-0.5 bg-slate-500/35 align-middle dark:bg-slate-400/35" />
           {snippet || "…"}
         </pre>
+
+        <div className="mt-4 w-full rounded-2xl border border-slate-200/80 bg-white/65 p-3 backdrop-blur-sm dark:border-slate-700/70 dark:bg-slate-900/45">
+          <p className="mb-2 text-xs font-semibold text-slate-700 dark:text-slate-200">{labels.recentChanges}</p>
+          {recentChanges.length === 0 ? (
+            <p className="text-xs text-slate-500 dark:text-slate-400">{labels.noRecentChanges}</p>
+          ) : (
+            <ul className="max-h-36 space-y-2 overflow-y-auto pr-1">
+              {recentChanges.map((item) => (
+                <li key={item.path} className="rounded-lg border border-slate-200/80 bg-white/80 p-2 dark:border-slate-700/70 dark:bg-slate-950/55">
+                  <p className="truncate font-mono text-[0.65rem] font-semibold text-indigo-700 dark:text-indigo-300">
+                    {item.path}
+                  </p>
+                  <p className="mt-1 line-clamp-2 text-[0.68rem] text-slate-600 dark:text-slate-300">
+                    {item.after_preview}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

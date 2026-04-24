@@ -44,7 +44,13 @@
   "thinking": {
     "title": "Reviewing your JSON",
     "reading": "Reading & sending",
-    "thinking": "Analyzing text and applying corrections…"
+    "thinking": "Analyzing text and applying corrections…",
+    "currentPath": "Current path:",
+    "noPath": "waiting for first processed chunk...",
+    "recentChanges": "Recent modifications",
+    "noRecentChanges": "No completed changes yet.",
+    "speed": "Speed:",
+    "eta": "ETA:"
   },
   "tabs": {
     "result": "Reviewed JSON",

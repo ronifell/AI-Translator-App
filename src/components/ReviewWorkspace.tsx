@@ -22,6 +22,7 @@ type Messages = typeof en;
 const dictionaries: Record<Locale, Messages> = { en, pt };
 
 type ChangeRow = { path: string; before: string; after: string };
+type LiveChangePreview = { path: string; before_preview: string; after_preview: string };
 
 const API_BASE =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL
@@ -57,6 +58,10 @@ function uploadFormData(
   });
 }
 
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const t = dictionaries[locale];
 
@@ -66,6 +71,11 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const [busy, setBusy] = useState(false);
   const [thinkingSample, setThinkingSample] = useState("");
   const [uploadPct, setUploadPct] = useState<number | null>(null);
+  const [backendPct, setBackendPct] = useState<number | null>(null);
+  const [currentPath, setCurrentPath] = useState<string | null>(null);
+  const [recentLiveChanges, setRecentLiveChanges] = useState<LiveChangePreview[]>([]);
+  const [processingSpeed, setProcessingSpeed] = useState<number | null>(null);
+  const [etaSeconds, setEtaSeconds] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [originalJson, setOriginalJson] = useState<string | null>(null);
@@ -84,6 +94,11 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     setOriginalJson(null);
     setResultJson(null);
     setChanges([]);
+    setBackendPct(null);
+    setCurrentPath(null);
+    setRecentLiveChanges([]);
+    setProcessingSpeed(null);
+    setEtaSeconds(null);
   };
 
   const readOriginal = useCallback(async (): Promise<string> => {
@@ -111,11 +126,16 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
       setThinkingSample(rawJson);
       setBusy(true);
       setUploadPct(0);
+      setBackendPct(null);
+      setCurrentPath(null);
+      setRecentLiveChanges([]);
+      setProcessingSpeed(null);
+      setEtaSeconds(null);
       const fd = new FormData();
       fd.append("file", file);
       fd.append("target_language", targetLanguage);
       fd.append("treat_biblical_texto_as_google", treatBiblical ? "true" : "false");
-      const res = await uploadFormData(`${API_BASE}/api/review/upload`, fd, (p) => {
+      const res = await uploadFormData(`${API_BASE}/api/review/upload/async`, fd, (p) => {
         setUploadPct(p);
       });
       if (!res.ok || !res.json || typeof res.json !== "object") {
@@ -125,11 +145,65 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
             : res.text ?? t.errors.network;
         throw new Error(detail);
       }
-      const data = res.json as {
+      setUploadPct(100);
+      const enqueue = res.json as { job_id?: unknown };
+      const jobId = typeof enqueue.job_id === "string" ? enqueue.job_id : null;
+      if (!jobId) {
+        throw new Error(t.errors.network);
+      }
+
+      const startedAtMs = Date.now();
+      while (true) {
+        const statusResp = await fetch(`${API_BASE}/api/review/jobs/${jobId}`, { cache: "no-store" });
+        const statusJson = (await statusResp.json()) as {
+          detail?: string;
+          status?: string;
+          error?: string | null;
+          progress_pct?: number;
+          total_units?: number | null;
+          completed_units?: number | null;
+          current_path?: string | null;
+          recent_changes?: LiveChangePreview[];
+        };
+        if (!statusResp.ok) {
+          throw new Error(statusJson.detail ?? t.errors.network);
+        }
+        setBackendPct(typeof statusJson.progress_pct === "number" ? statusJson.progress_pct : null);
+        setCurrentPath(typeof statusJson.current_path === "string" ? statusJson.current_path : null);
+        setRecentLiveChanges(Array.isArray(statusJson.recent_changes) ? statusJson.recent_changes : []);
+        const completedUnits =
+          typeof statusJson.completed_units === "number" ? statusJson.completed_units : null;
+        const totalUnits = typeof statusJson.total_units === "number" ? statusJson.total_units : null;
+        if (completedUnits !== null && completedUnits > 0) {
+          const elapsedSec = Math.max((Date.now() - startedAtMs) / 1000, 0.001);
+          const unitsPerSec = completedUnits / elapsedSec;
+          setProcessingSpeed(unitsPerSec);
+          if (totalUnits !== null && totalUnits >= completedUnits && unitsPerSec > 0) {
+            setEtaSeconds((totalUnits - completedUnits) / unitsPerSec);
+          } else {
+            setEtaSeconds(null);
+          }
+        }
+
+        if (statusJson.status === "failed") {
+          throw new Error(statusJson.error ?? statusJson.detail ?? t.errors.network);
+        }
+        if (statusJson.status === "completed") {
+          break;
+        }
+        await wait(1200);
+      }
+
+      const resultResp = await fetch(`${API_BASE}/api/review/jobs/${jobId}/result`, { cache: "no-store" });
+      const data = (await resultResp.json()) as {
+        detail?: string;
         result: unknown;
         changes: ChangeRow[];
         change_count: number;
       };
+      if (!resultResp.ok) {
+        throw new Error(data.detail ?? t.errors.network);
+      }
       setResultJson(JSON.stringify(data.result, null, 2));
       setChanges(Array.isArray(data.changes) ? data.changes : []);
       setActiveTab("result");
@@ -138,6 +212,11 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     } finally {
       setBusy(false);
       setUploadPct(null);
+      setBackendPct(null);
+      setCurrentPath(null);
+      setRecentLiveChanges([]);
+      setProcessingSpeed(null);
+      setEtaSeconds(null);
       setThinkingSample("");
     }
   }, [file, readOriginal, targetLanguage, treatBiblical, t]);
@@ -440,10 +519,21 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
           open={busy}
           jsonSample={thinkingSample}
           uploadPct={uploadPct}
+          backendPct={backendPct}
+          currentPath={currentPath}
+          recentChanges={recentLiveChanges}
+          processingSpeed={processingSpeed}
+          etaSeconds={etaSeconds}
           labels={{
             title: t.thinking.title,
             reading: t.thinking.reading,
             thinking: t.thinking.thinking,
+            currentPath: t.thinking.currentPath,
+            noPath: t.thinking.noPath,
+            recentChanges: t.thinking.recentChanges,
+            noRecentChanges: t.thinking.noRecentChanges,
+            speed: t.thinking.speed,
+            eta: t.thinking.eta,
           }}
         />
       )}
