@@ -50,7 +50,9 @@ function useStreamingSnippet(source: string, active: boolean, windowLen: number,
     const id = window.setInterval(() => {
       setStart((s) => {
         const next = s + stride;
-        return next > maxStart ? maxStart : next;
+        // Loop back to the start so the flow never looks "stuck"
+        // on huge jobs where processing continues for a long time.
+        return next > maxStart ? 0 : next;
       });
     }, stepMs);
     return () => window.clearInterval(id);
@@ -194,7 +196,7 @@ export function ReviewThinkingOverlay({
               />
             </div>
             <p className="mt-1.5 text-center font-mono text-[0.75rem] font-semibold text-slate-700 dark:text-slate-200">
-              {animatedPct.toFixed(1)}%
+              {animatedPct.toFixed(2)}%
             </p>
           </div>
           <p className="mt-2 max-w-[min(42rem,92vw)] truncate text-xs font-medium text-slate-700 dark:text-slate-200">
