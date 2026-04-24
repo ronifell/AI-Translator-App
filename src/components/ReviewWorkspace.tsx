@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ReviewThinkingOverlay } from "@/components/ReviewThinkingOverlay";
@@ -28,6 +28,7 @@ const API_BASE =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL
     ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")
     : "http://127.0.0.1:8000";
+const ACTIVE_JOB_KEY = "ai-translator-active-review-job";
 
 function uploadFormData(
   url: string,
@@ -76,6 +77,8 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const [recentLiveChanges, setRecentLiveChanges] = useState<LiveChangePreview[]>([]);
   const [processingSpeed, setProcessingSpeed] = useState<number | null>(null);
   const [etaSeconds, setEtaSeconds] = useState<number | null>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [reconnectedNotice, setReconnectedNotice] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [originalJson, setOriginalJson] = useState<string | null>(null);
@@ -86,6 +89,8 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const [diffMode, setDiffMode] = useState<"before" | "after">("after");
 
   const changeCount = changes.length;
+  const uploadCtaPulse = !file ? "cta-upload-beacon" : "";
+  const startCtaPulse = file && !busy ? "cta-start-beacon" : "";
 
   const onPick: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const f = e.target.files?.[0];
@@ -112,6 +117,68 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     }
     return text;
   }, [file, t.errors.invalidJson]);
+
+  const resetLiveProgress = useCallback(() => {
+    setBusy(false);
+    setUploadPct(null);
+    setBackendPct(null);
+    setCurrentPath(null);
+    setRecentLiveChanges([]);
+    setProcessingSpeed(null);
+    setEtaSeconds(null);
+    setThinkingSample("");
+    setActiveJobId(null);
+    setReconnectedNotice(false);
+    localStorage.removeItem(ACTIVE_JOB_KEY);
+  }, []);
+
+  const pollJobUntilDone = useCallback(
+    async (jobId: string, startedAtMs: number) => {
+      while (true) {
+        const statusResp = await fetch(`${API_BASE}/api/review/jobs/${jobId}`, { cache: "no-store" });
+        const statusJson = (await statusResp.json()) as {
+          detail?: string;
+          status?: string;
+          error?: string | null;
+          progress_pct?: number;
+          total_units?: number | null;
+          completed_units?: number | null;
+          current_path?: string | null;
+          recent_changes?: LiveChangePreview[];
+        };
+        if (!statusResp.ok) {
+          throw new Error(statusJson.detail ?? t.errors.network);
+        }
+        setBackendPct(typeof statusJson.progress_pct === "number" ? statusJson.progress_pct : null);
+        setCurrentPath(typeof statusJson.current_path === "string" ? statusJson.current_path : null);
+        setRecentLiveChanges(Array.isArray(statusJson.recent_changes) ? statusJson.recent_changes : []);
+        const completedUnits =
+          typeof statusJson.completed_units === "number" ? statusJson.completed_units : null;
+        const totalUnits = typeof statusJson.total_units === "number" ? statusJson.total_units : null;
+        if (completedUnits !== null && completedUnits > 0) {
+          const elapsedSec = Math.max((Date.now() - startedAtMs) / 1000, 0.001);
+          const unitsPerSec = completedUnits / elapsedSec;
+          setProcessingSpeed(unitsPerSec);
+          if (totalUnits !== null && totalUnits >= completedUnits && unitsPerSec > 0) {
+            setEtaSeconds((totalUnits - completedUnits) / unitsPerSec);
+          } else {
+            setEtaSeconds(null);
+          }
+        }
+        if (statusJson.status === "failed") {
+          throw new Error(statusJson.error ?? statusJson.detail ?? t.errors.network);
+        }
+        if (statusJson.status === "cancelled") {
+          throw new Error(t.errors.cancelled);
+        }
+        if (statusJson.status === "completed") {
+          break;
+        }
+        await wait(1200);
+      }
+    },
+    [t.errors.cancelled, t.errors.network],
+  );
 
   const runReview = useCallback(async () => {
     if (!file) {
@@ -151,48 +218,10 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
       if (!jobId) {
         throw new Error(t.errors.network);
       }
+      setActiveJobId(jobId);
+      localStorage.setItem(ACTIVE_JOB_KEY, JSON.stringify({ jobId, startedAtMs: Date.now() }));
 
-      const startedAtMs = Date.now();
-      while (true) {
-        const statusResp = await fetch(`${API_BASE}/api/review/jobs/${jobId}`, { cache: "no-store" });
-        const statusJson = (await statusResp.json()) as {
-          detail?: string;
-          status?: string;
-          error?: string | null;
-          progress_pct?: number;
-          total_units?: number | null;
-          completed_units?: number | null;
-          current_path?: string | null;
-          recent_changes?: LiveChangePreview[];
-        };
-        if (!statusResp.ok) {
-          throw new Error(statusJson.detail ?? t.errors.network);
-        }
-        setBackendPct(typeof statusJson.progress_pct === "number" ? statusJson.progress_pct : null);
-        setCurrentPath(typeof statusJson.current_path === "string" ? statusJson.current_path : null);
-        setRecentLiveChanges(Array.isArray(statusJson.recent_changes) ? statusJson.recent_changes : []);
-        const completedUnits =
-          typeof statusJson.completed_units === "number" ? statusJson.completed_units : null;
-        const totalUnits = typeof statusJson.total_units === "number" ? statusJson.total_units : null;
-        if (completedUnits !== null && completedUnits > 0) {
-          const elapsedSec = Math.max((Date.now() - startedAtMs) / 1000, 0.001);
-          const unitsPerSec = completedUnits / elapsedSec;
-          setProcessingSpeed(unitsPerSec);
-          if (totalUnits !== null && totalUnits >= completedUnits && unitsPerSec > 0) {
-            setEtaSeconds((totalUnits - completedUnits) / unitsPerSec);
-          } else {
-            setEtaSeconds(null);
-          }
-        }
-
-        if (statusJson.status === "failed") {
-          throw new Error(statusJson.error ?? statusJson.detail ?? t.errors.network);
-        }
-        if (statusJson.status === "completed") {
-          break;
-        }
-        await wait(1200);
-      }
+      await pollJobUntilDone(jobId, Date.now());
 
       const resultResp = await fetch(`${API_BASE}/api/review/jobs/${jobId}/result`, { cache: "no-store" });
       const data = (await resultResp.json()) as {
@@ -210,16 +239,9 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     } catch (e) {
       setError(e instanceof Error ? e.message : t.errors.network);
     } finally {
-      setBusy(false);
-      setUploadPct(null);
-      setBackendPct(null);
-      setCurrentPath(null);
-      setRecentLiveChanges([]);
-      setProcessingSpeed(null);
-      setEtaSeconds(null);
-      setThinkingSample("");
+      resetLiveProgress();
     }
-  }, [file, readOriginal, targetLanguage, treatBiblical, t]);
+  }, [file, pollJobUntilDone, readOriginal, resetLiveProgress, targetLanguage, treatBiblical, t]);
 
   const downloadResult = useCallback(() => {
     if (!resultJson || !file) return;
@@ -238,7 +260,8 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     setResultJson(null);
     setChanges([]);
     setError(null);
-  }, []);
+    resetLiveProgress();
+  }, [resetLiveProgress]);
 
   const diffSnippet = useMemo(() => {
     const row = changes[diffIdx];
@@ -247,6 +270,56 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     const max = 12000;
     return text.length > max ? `${text.slice(0, max)}\n…` : text;
   }, [changes, diffIdx, diffMode]);
+
+  useEffect(() => {
+    const raw = localStorage.getItem(ACTIVE_JOB_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as { jobId?: unknown; startedAtMs?: unknown };
+      const jobId = typeof parsed.jobId === "string" ? parsed.jobId : null;
+      const startedAtMs =
+        typeof parsed.startedAtMs === "number" && Number.isFinite(parsed.startedAtMs)
+          ? parsed.startedAtMs
+          : Date.now();
+      if (!jobId) return;
+      setBusy(true);
+      setActiveJobId(jobId);
+      setReconnectedNotice(true);
+      void (async () => {
+        try {
+          await pollJobUntilDone(jobId, startedAtMs);
+          const resultResp = await fetch(`${API_BASE}/api/review/jobs/${jobId}/result`, {
+            cache: "no-store",
+          });
+          const data = (await resultResp.json()) as {
+            detail?: string;
+            result: unknown;
+            changes: ChangeRow[];
+          };
+          if (!resultResp.ok) throw new Error(data.detail ?? t.errors.network);
+          setResultJson(JSON.stringify(data.result, null, 2));
+          setChanges(Array.isArray(data.changes) ? data.changes : []);
+          setActiveTab("result");
+        } catch (e) {
+          setError(e instanceof Error ? e.message : t.errors.network);
+        } finally {
+          resetLiveProgress();
+        }
+      })();
+    } catch {
+      localStorage.removeItem(ACTIVE_JOB_KEY);
+    }
+  }, [pollJobUntilDone, resetLiveProgress, t.errors.network]);
+
+  const cancelProcess = useCallback(async () => {
+    if (!activeJobId) return;
+    try {
+      await fetch(`${API_BASE}/api/review/jobs/${activeJobId}/cancel`, { method: "POST" });
+    } finally {
+      resetLiveProgress();
+      setError(t.errors.cancelled);
+    }
+  }, [activeJobId, resetLiveProgress, t.errors.cancelled]);
 
   return (
     <div className="relative box-border grid h-[100dvh] max-h-[100dvh] w-full grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden text-slate-900 dark:text-slate-100">
@@ -319,7 +392,7 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
               </span>
             </div>
             <p className={`${ui.muted} mt-2`}>{t.upload.hint}</p>
-            <label className={`${ui.dropzone} mt-4 min-h-0 flex-[1_1_auto]`}>
+            <label className={`${ui.dropzone} ${uploadCtaPulse} mt-4 min-h-0 flex-[1_1_auto]`}>
               <input type="file" accept="application/json,.json" className="hidden" onChange={onPick} />
               <span className="text-sm font-bold text-indigo-600 transition group-hover:text-indigo-700 dark:text-indigo-400 dark:group-hover:text-indigo-300">
                 {t.upload.choose}
@@ -362,7 +435,7 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
               type="button"
               disabled={busy || !file}
               onClick={() => void runReview()}
-              className={`${ui.btnPrimary} ${ui.focusRing}`}
+              className={`${ui.btnPrimary} ${startCtaPulse} ${ui.focusRing}`}
             >
               {busy ? t.progress.uploading : t.actions.start}
             </button>
@@ -514,6 +587,12 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
         </Link>
       </div>
 
+      {reconnectedNotice && busy && (
+        <div className="pointer-events-none fixed left-1/2 top-5 z-[140] -translate-x-1/2 rounded-full border border-emerald-300/80 bg-emerald-50/95 px-3 py-1 text-[0.72rem] font-semibold text-emerald-700 shadow-sm dark:border-emerald-500/60 dark:bg-emerald-950/70 dark:text-emerald-200">
+          {t.progress.reconnected}
+        </div>
+      )}
+
       {busy && (
         <ReviewThinkingOverlay
           open={busy}
@@ -524,6 +603,7 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
           recentChanges={recentLiveChanges}
           processingSpeed={processingSpeed}
           etaSeconds={etaSeconds}
+          onCancel={cancelProcess}
           labels={{
             title: t.thinking.title,
             reading: t.thinking.reading,
@@ -534,6 +614,7 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
             noRecentChanges: t.thinking.noRecentChanges,
             speed: t.thinking.speed,
             eta: t.thinking.eta,
+            cancel: t.thinking.cancel,
           }}
         />
       )}

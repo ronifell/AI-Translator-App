@@ -39,7 +39,8 @@
   "progress": {
     "idle": "Aguardando arquivo",
     "uploading": "Enviando e processando…",
-    "note": "Arquivos muito grandes podem demorar. Não feche esta página."
+    "note": "Arquivos muito grandes podem demorar. Não feche esta página.",
+    "reconnected": "Reconectado ao processo em andamento"
   },
   "thinking": {
     "title": "Revisando seu JSON",
@@ -50,7 +51,8 @@
     "recentChanges": "Modificações recentes",
     "noRecentChanges": "Ainda não há alterações concluídas.",
     "speed": "Velocidade:",
-    "eta": "Tempo restante:"
+    "eta": "Tempo restante:",
+    "cancel": "Cancelar processo"
   },
   "tabs": {
     "result": "JSON revisado",
@@ -72,7 +74,8 @@
   "errors": {
     "noFile": "Selecione um arquivo JSON.",
     "network": "Falha na rede ou no servidor. Verifique se a API está em execução e a chave OPENAI_API_KEY.",
-    "invalidJson": "JSON inválido."
+    "invalidJson": "JSON inválido.",
+    "cancelled": "Processo cancelado pelo usuário."
   },
   "footer": {
     "note": "Apenas ortografia, gramática e sintaxe. Significado e integridade do texto são preservados."

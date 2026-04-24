@@ -101,4 +101,28 @@
       opacity: 0.75;
     }
   }
+
+  @keyframes cta-beacon {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 0 rgba(99, 102, 241, 0.52),
+        0 0 0.55rem rgba(99, 102, 241, 0.35);
+      border-color: rgba(99, 102, 241, 0.85);
+    }
+    50% {
+      box-shadow:
+        0 0 0 0.26rem rgba(99, 102, 241, 0.16),
+        0 0 1rem rgba(99, 102, 241, 0.62);
+      border-color: rgba(129, 140, 248, 1);
+    }
+  }
+
+  .cta-upload-beacon {
+    animation: cta-beacon 1.15s ease-in-out infinite;
+  }
+
+  .cta-start-beacon {
+    animation: cta-beacon 1.05s ease-in-out infinite;
+  }
 }

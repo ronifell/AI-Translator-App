@@ -13,6 +13,7 @@ export type ThinkingLabels = {
   noRecentChanges: string;
   speed: string;
   eta: string;
+  cancel: string;
 };
 
 type LiveChange = {
@@ -30,6 +31,7 @@ type Props = {
   recentChanges: LiveChange[];
   processingSpeed: number | null;
   etaSeconds: number | null;
+  onCancel: () => void;
   labels: ThinkingLabels;
 };
 
@@ -94,8 +96,19 @@ export function ReviewThinkingOverlay({
   recentChanges,
   processingSpeed,
   etaSeconds,
+  onCancel,
   labels,
 }: Props) {
+  const fallbackFlowSource = useMemo(() => {
+    const recent = recentChanges
+      .slice(0, 6)
+      .map((c) => `${c.path}\n${c.after_preview}`)
+      .join("\n\n");
+    const status = `${labels.thinking}\n${labels.currentPath} ${currentPath ?? labels.noPath}`;
+    return `${status}\n\n${recent || labels.noRecentChanges}\n\n${status}\n\n${recent || labels.noRecentChanges}`;
+  }, [currentPath, labels.currentPath, labels.noPath, labels.noRecentChanges, labels.thinking, recentChanges]);
+
+  const flowSource = jsonSample.trim().length > 0 ? jsonSample : fallbackFlowSource;
   const etaLabel = useMemo(() => {
     if (etaSeconds === null || !Number.isFinite(etaSeconds) || etaSeconds < 0) return "—";
     const secs = Math.round(etaSeconds);
@@ -108,9 +121,9 @@ export function ReviewThinkingOverlay({
   }, [etaSeconds]);
 
   const [mounted, setMounted] = useState(false);
-  const { snippet, start } = useStreamingSnippet(jsonSample, open, 220, 42);
+  const { snippet, start } = useStreamingSnippet(flowSource, open, 220, 42);
   const [animatedPct, setAnimatedPct] = useState(0);
-  const lineStarts = useMemo(() => countLineStarts(jsonSample), [jsonSample]);
+  const lineStarts = useMemo(() => countLineStarts(flowSource), [flowSource]);
   const totalLines = lineStarts.length;
   const readLine = useMemo(() => {
     if (!totalLines) return 0;
@@ -244,6 +257,13 @@ export function ReviewThinkingOverlay({
             </ul>
           )}
         </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="mt-4 inline-flex items-center justify-center rounded-xl border border-rose-400/80 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 dark:border-rose-500/70 dark:bg-rose-950/40 dark:text-rose-200 dark:hover:bg-rose-900/50"
+        >
+          {labels.cancel}
+        </button>
       </div>
     </div>
   );
