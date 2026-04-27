@@ -27,6 +27,7 @@
     "title": "Review options",
     "targetLang": "Target language (hint for the model)",
     "targetLangHint": "Used for minimal fixes when a short passage is in the wrong language.",
+    "targetLangSearch": "Search language or code…",
     "treatBiblical": "Treat all biblical \"texto\" fields as Google-translated",
     "treatBiblicalHint": "Use when your JSON lacks metadata (traduzido_google, fonte, etc.). Otherwise only Google-marked \"texto\" or content after \"1. Esra\" is reviewed."
   },

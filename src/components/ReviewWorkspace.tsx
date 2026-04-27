@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ReviewThinkingOverlay } from "@/components/ReviewThinkingOverlay";
 import type { Locale } from "@/lib/i18n";
+import { DEFAULT_TARGET_LANGUAGE_CODE, TARGET_LANGUAGES } from "@/lib/languages";
 import {
   ui,
   uiChangeRow,
@@ -67,7 +68,8 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const t = dictionaries[locale];
 
   const [file, setFile] = useState<File | null>(null);
-  const [targetLanguage, setTargetLanguage] = useState("pt-BR");
+  const [targetLanguage, setTargetLanguage] = useState(DEFAULT_TARGET_LANGUAGE_CODE);
+  const [targetLangSearch, setTargetLangSearch] = useState("");
   const [treatBiblical, setTreatBiblical] = useState(false);
   const [busy, setBusy] = useState(false);
   const [thinkingSample, setThinkingSample] = useState("");
@@ -91,6 +93,23 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const changeCount = changes.length;
   const uploadCtaPulse = !file ? "cta-upload-beacon" : "";
   const startCtaPulse = file && !busy ? "cta-start-beacon" : "";
+
+  const filteredTargetLanguages = useMemo(() => {
+    const q = targetLangSearch.trim().toLowerCase();
+    let opts = [...TARGET_LANGUAGES];
+    if (q) {
+      opts = TARGET_LANGUAGES.filter(
+        (o) =>
+          o.label.toLowerCase().includes(q) ||
+          o.code.toLowerCase().includes(q),
+      );
+    }
+    const sel = TARGET_LANGUAGES.find((o) => o.code === targetLanguage);
+    if (sel && !opts.some((o) => o.code === sel.code)) {
+      opts = [sel, ...opts];
+    }
+    return opts;
+  }, [targetLangSearch, targetLanguage]);
 
   const onPick: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const f = e.target.files?.[0];
@@ -406,14 +425,27 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
           <section className={`${ui.card} flex min-h-0 flex-[1.25_1_0%] flex-col overflow-hidden p-5 sm:p-6`}>
             <h2 className={ui.heading}>{t.options.title}</h2>
             <label className={`${ui.label} mt-4 block`}>{t.options.targetLang}</label>
+            <input
+              type="search"
+              className={`${ui.field} mt-2 ${ui.focusRing}`}
+              value={targetLangSearch}
+              onChange={(e) => setTargetLangSearch(e.target.value)}
+              placeholder={t.options.targetLangSearch}
+              aria-label={t.options.targetLangSearch}
+              autoComplete="off"
+              spellCheck={false}
+            />
             <select
               className={`${ui.field} mt-2 ${ui.focusRing}`}
               value={targetLanguage}
               onChange={(e) => setTargetLanguage(e.target.value)}
+              aria-label={t.options.targetLang}
             >
-              <option value="pt-BR">pt-BR</option>
-              <option value="en">en</option>
-              <option value="es">es</option>
+              {filteredTargetLanguages.map((o) => (
+                <option key={o.code} value={o.code}>
+                  {o.label} ({o.code})
+                </option>
+              ))}
             </select>
             <p className={`${ui.muted} mt-2`}>{t.options.targetLangHint}</p>
             <label className="mt-4 flex cursor-pointer items-start gap-3.5 rounded-xl border border-slate-200/80 bg-slate-50/80 p-3.5 text-sm text-slate-700 transition hover:border-indigo-200 hover:bg-white dark:border-slate-700/80 dark:bg-slate-950/40 dark:text-slate-300 dark:hover:border-indigo-500/40 dark:hover:bg-slate-900/60">

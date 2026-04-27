@@ -27,6 +27,7 @@
     "title": "Opções de revisão",
     "targetLang": "Idioma alvo (dica para a IA)",
     "targetLangHint": "Usado para correções mínimas de trechos no idioma errado.",
+    "targetLangSearch": "Buscar idioma ou código…",
     "treatBiblical": "Tratar todo texto bíblico (campo \"texto\") como traduzido pelo Google",
     "treatBiblicalHint": "Use quando o JSON não tiver metadados (traduzido_google, fonte, etc.). Caso contrário, só \"texto\" marcado como Google ou após \"1. Esra\" é revisado."
   },
