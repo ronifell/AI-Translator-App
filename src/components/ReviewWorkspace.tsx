@@ -372,8 +372,8 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
           </div>
         </div>
 
-        <div className="flex min-h-0 max-w-full shrink-0 flex-row items-stretch justify-end gap-3 sm:max-w-[44%] sm:gap-4">
-          <div className="flex min-h-[2.5rem] min-w-0 flex-[1_1_0] basis-0 sm:max-w-[48%]">
+        <div className="flex min-h-0 max-w-full shrink-0 flex-row items-stretch justify-end gap-3 sm:max-w-[min(100%,36rem)] sm:gap-4">
+          <div className="flex min-h-[2.5rem] min-w-0 flex-[1_1_0] basis-0 sm:max-w-[17rem]">
             <ThemeToggle
               labelLight={t.theme.light}
               labelDark={t.theme.dark}
@@ -383,7 +383,7 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
           <div
             role="group"
             aria-label={t.locale.label}
-            className={`flex min-h-[2.5rem] w-full min-w-0 flex-[1_1_0] basis-0 items-stretch sm:max-w-[48%] ${ui.segmented}`}
+            className={`flex min-h-[2.5rem] w-full min-w-0 flex-[1_1_0] basis-0 items-stretch sm:max-w-[17rem] ${ui.segmented}`}
           >
             <Link
               href="/pt"
@@ -402,8 +402,8 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
       </header>
 
       <div className="relative z-10 flex min-h-0 w-full flex-1 flex-row gap-5 overflow-hidden px-[clamp(1rem,2.5vw,2rem)] pb-4 pt-4">
-        <aside className="flex min-h-0 w-full flex-[0_0_30%] flex-col gap-4 overflow-y-auto pr-1 lg:flex-[0_0_27%]">
-          <section className={`${ui.card} flex min-h-0 flex-[0_0_34%] flex-col p-5 sm:p-6`}>
+        <aside className="flex min-h-0 w-[min(100%,26rem)] flex-[0_0_min(100%,26rem)] flex-col gap-4 overflow-hidden lg:w-[27%] lg:flex-[0_0_27%]">
+          <section className={`${ui.card} flex min-h-0 flex-[1.15_1_0%] flex-col overflow-hidden p-5 sm:p-6`}>
             <div className="flex items-start justify-between gap-2">
               <h2 className={ui.heading}>{t.upload.title}</h2>
               <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/90 dark:text-indigo-300">
@@ -422,7 +422,7 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
             </label>
           </section>
 
-          <section className={`${ui.card} flex min-h-0 flex-[1_1_0%] flex-col overflow-y-auto p-5 sm:p-6`}>
+          <section className={`${ui.card} flex min-h-0 flex-[1.25_1_0%] flex-col overflow-hidden p-5 sm:p-6`}>
             <h2 className={ui.heading}>{t.options.title}</h2>
             <label className={`${ui.label} mt-4 block`}>{t.options.targetLang}</label>
             <input
@@ -477,7 +477,7 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
           </div>
 
           {error && (
-            <div className={`${ui.error} shrink-0`}>
+            <div className={`${ui.error} max-h-[18%] shrink-0 overflow-hidden`}>
               <span className="line-clamp-4">{error}</span>
             </div>
           )}
