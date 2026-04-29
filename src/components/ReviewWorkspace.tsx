@@ -131,6 +131,7 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     setOriginalJson(text);
     try {
       JSON.parse(text);
+      setError(null);
     } catch {
       setError(t.errors.invalidJson);
     }
@@ -209,6 +210,11 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     setChanges([]);
     try {
       const rawJson = await readOriginal();
+      try {
+        JSON.parse(rawJson);
+      } catch {
+        return;
+      }
       setThinkingSample(rawJson);
       setBusy(true);
       setUploadPct(0);
