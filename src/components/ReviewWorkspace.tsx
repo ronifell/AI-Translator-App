@@ -30,6 +30,9 @@ const API_BASE =
     ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")
     : "http://127.0.0.1:8000";
 const ACTIVE_JOB_KEY = "ai-translator-active-review-job";
+const MAX_POLL_FAILURE_STREAK = 120;
+const POLL_BACKOFF_MIN_MS = 1200;
+const POLL_BACKOFF_MAX_MS = 12000;
 
 function uploadFormData(
   url: string,
@@ -154,47 +157,65 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
 
   const pollJobUntilDone = useCallback(
     async (jobId: string, startedAtMs: number) => {
+      let failureStreak = 0;
       while (true) {
-        const statusResp = await fetch(`${API_BASE}/api/review/jobs/${jobId}`, { cache: "no-store" });
-        const statusJson = (await statusResp.json()) as {
-          detail?: string;
-          status?: string;
-          error?: string | null;
-          progress_pct?: number;
-          total_units?: number | null;
-          completed_units?: number | null;
-          current_path?: string | null;
-          recent_changes?: LiveChangePreview[];
-        };
-        if (!statusResp.ok) {
-          throw new Error(statusJson.detail ?? t.errors.network);
-        }
-        setBackendPct(typeof statusJson.progress_pct === "number" ? statusJson.progress_pct : null);
-        setCurrentPath(typeof statusJson.current_path === "string" ? statusJson.current_path : null);
-        setRecentLiveChanges(Array.isArray(statusJson.recent_changes) ? statusJson.recent_changes : []);
-        const completedUnits =
-          typeof statusJson.completed_units === "number" ? statusJson.completed_units : null;
-        const totalUnits = typeof statusJson.total_units === "number" ? statusJson.total_units : null;
-        if (completedUnits !== null && completedUnits > 0) {
-          const elapsedSec = Math.max((Date.now() - startedAtMs) / 1000, 0.001);
-          const unitsPerSec = completedUnits / elapsedSec;
-          setProcessingSpeed(unitsPerSec);
-          if (totalUnits !== null && totalUnits >= completedUnits && unitsPerSec > 0) {
-            setEtaSeconds((totalUnits - completedUnits) / unitsPerSec);
-          } else {
-            setEtaSeconds(null);
+        try {
+          const statusResp = await fetch(`${API_BASE}/api/review/jobs/${jobId}`, { cache: "no-store" });
+          const statusJson = (await statusResp.json()) as {
+            detail?: string;
+            status?: string;
+            error?: string | null;
+            progress_pct?: number;
+            total_units?: number | null;
+            completed_units?: number | null;
+            current_path?: string | null;
+            recent_changes?: LiveChangePreview[];
+          };
+          if (!statusResp.ok) {
+            throw new Error(statusJson.detail ?? t.errors.network);
           }
+          failureStreak = 0;
+          setBackendPct(typeof statusJson.progress_pct === "number" ? statusJson.progress_pct : null);
+          setCurrentPath(typeof statusJson.current_path === "string" ? statusJson.current_path : null);
+          setRecentLiveChanges(Array.isArray(statusJson.recent_changes) ? statusJson.recent_changes : []);
+          const completedUnits =
+            typeof statusJson.completed_units === "number" ? statusJson.completed_units : null;
+          const totalUnits = typeof statusJson.total_units === "number" ? statusJson.total_units : null;
+          if (completedUnits !== null && completedUnits > 0) {
+            const elapsedSec = Math.max((Date.now() - startedAtMs) / 1000, 0.001);
+            const unitsPerSec = completedUnits / elapsedSec;
+            setProcessingSpeed(unitsPerSec);
+            if (totalUnits !== null && totalUnits >= completedUnits && unitsPerSec > 0) {
+              setEtaSeconds((totalUnits - completedUnits) / unitsPerSec);
+            } else {
+              setEtaSeconds(null);
+            }
+          }
+          if (statusJson.status === "failed") {
+            throw new Error(statusJson.error ?? statusJson.detail ?? t.errors.network);
+          }
+          if (statusJson.status === "cancelled") {
+            throw new Error(t.errors.cancelled);
+          }
+          if (statusJson.status === "completed") {
+            break;
+          }
+          await wait(POLL_BACKOFF_MIN_MS);
+        } catch (err) {
+          if (err instanceof Error && err.message === t.errors.cancelled) {
+            throw err;
+          }
+          failureStreak += 1;
+          if (failureStreak >= MAX_POLL_FAILURE_STREAK) {
+            throw new Error(t.errors.network);
+          }
+          // Keep long-running jobs alive through temporary connectivity issues.
+          const retryDelay = Math.min(
+            POLL_BACKOFF_MIN_MS * Math.max(failureStreak, 1),
+            POLL_BACKOFF_MAX_MS,
+          );
+          await wait(retryDelay);
         }
-        if (statusJson.status === "failed") {
-          throw new Error(statusJson.error ?? statusJson.detail ?? t.errors.network);
-        }
-        if (statusJson.status === "cancelled") {
-          throw new Error(t.errors.cancelled);
-        }
-        if (statusJson.status === "completed") {
-          break;
-        }
-        await wait(1200);
       }
     },
     [t.errors.cancelled, t.errors.network],
