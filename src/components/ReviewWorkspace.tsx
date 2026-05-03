@@ -92,6 +92,7 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const [activeTab, setActiveTab] = useState<"result" | "changes" | "original">("result");
   const [diffIdx, setDiffIdx] = useState(0);
   const [diffMode, setDiffMode] = useState<"before" | "after">("after");
+  const [changeSearch, setChangeSearch] = useState("");
 
   const changeCount = changes.length;
   const uploadCtaPulse = !file ? "cta-upload-beacon" : "";
@@ -309,13 +310,29 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     resetLiveProgress();
   }, [resetLiveProgress]);
 
+  const filteredChanges = useMemo(() => {
+    const q = changeSearch.trim().toLowerCase();
+    if (!q) return changes;
+    return changes.filter((c) => {
+      return (
+        c.path.toLowerCase().includes(q) ||
+        c.before.toLowerCase().includes(q) ||
+        c.after.toLowerCase().includes(q)
+      );
+    });
+  }, [changeSearch, changes]);
+
   const diffSnippet = useMemo(() => {
-    const row = changes[diffIdx];
+    const row = filteredChanges[diffIdx];
     if (!row) return null;
     const text = diffMode === "before" ? row.before : row.after;
     const max = 12000;
     return text.length > max ? `${text.slice(0, max)}\n…` : text;
-  }, [changes, diffIdx, diffMode]);
+  }, [diffIdx, diffMode, filteredChanges]);
+
+  useEffect(() => {
+    setDiffIdx(0);
+  }, [changeSearch, changes]);
 
   useEffect(() => {
     const raw = localStorage.getItem(ACTIVE_JOB_KEY);
@@ -571,11 +588,28 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
             {activeTab === "changes" && (
               <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
                 <div className="min-h-0 w-[38%] flex-[0_0_38%] overflow-hidden">
-                  {changes.length === 0 ? (
+                  <div className="mb-2">
+                    <input
+                      type="search"
+                      className={`${ui.field} ${ui.focusRing}`}
+                      value={changeSearch}
+                      onChange={(e) => setChangeSearch(e.target.value)}
+                      placeholder={t.diff.searchPlaceholder}
+                      aria-label={t.diff.searchPlaceholder}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                    <p className={`${ui.muted} mt-1 text-[0.7rem]`}>
+                      {t.changes.filtered
+                        .replace("{shown}", String(filteredChanges.length))
+                        .replace("{total}", String(changes.length))}
+                    </p>
+                  </div>
+                  {filteredChanges.length === 0 ? (
                     <p className={`${ui.muted} text-sm`}>{t.changes.empty}</p>
                   ) : (
                     <ul className="h-full overflow-y-auto overflow-x-hidden pr-1 text-xs">
-                      {changes.map((c, i) => (
+                      {filteredChanges.map((c, i) => (
                         <li key={`${c.path}-${i}`}>
                           <button
                             type="button"

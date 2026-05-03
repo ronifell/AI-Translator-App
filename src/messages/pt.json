@@ -65,12 +65,14 @@
     "path": "Caminho",
     "before": "Antes",
     "after": "Depois",
+    "filtered": "Mostrando {shown} de {total} alterações",
     "empty": "Nenhuma alteração registrada (texto já estava correto ou nada foi elegível para revisão)."
   },
   "diff": {
     "toggle": "Comparar antes/depois",
     "showOriginal": "Mostrar original",
-    "showCorrected": "Mostrar corrigido"
+    "showCorrected": "Mostrar corrigido",
+    "searchPlaceholder": "Buscar em caminho / original / corrigido (ex.: the)"
   },
   "errors": {
     "noFile": "Selecione um arquivo JSON.",
