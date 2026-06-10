@@ -53,7 +53,8 @@
     "noRecentChanges": "No completed changes yet.",
     "speed": "Speed:",
     "eta": "ETA:",
-    "cancel": "Cancel Process"
+    "cancel": "Cancel Process",
+    "paused": "Daily API limit reached. Paused — progress is saved and will resume automatically after the quota resets{when}. You can safely close this page."
   },
   "tabs": {
     "result": "Reviewed JSON",

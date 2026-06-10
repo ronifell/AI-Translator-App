@@ -25,6 +25,11 @@ const dictionaries: Record<Locale, Messages> = { en, pt };
 type ChangeRow = { path: string; before: string; after: string };
 type LiveChangePreview = { path: string; before_preview: string; after_preview: string };
 
+// Thrown when the backend job reaches a terminal state (failed/cancelled).
+// These must NOT be retried as transient poll failures; their message is the
+// real reason the job stopped and should be surfaced to the user immediately.
+class TerminalJobError extends Error {}
+
 const API_BASE =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL
     ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")
@@ -84,6 +89,8 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const [etaSeconds, setEtaSeconds] = useState<number | null>(null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [reconnectedNotice, setReconnectedNotice] = useState(false);
+  const [jobStatus, setJobStatus] = useState<string | null>(null);
+  const [resumeAfter, setResumeAfter] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [originalJson, setOriginalJson] = useState<string | null>(null);
@@ -97,6 +104,18 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const changeCount = changes.length;
   const uploadCtaPulse = !file ? "cta-upload-beacon" : "";
   const startCtaPulse = file && !busy ? "cta-start-beacon" : "";
+
+  const pausedNote = useMemo(() => {
+    if (jobStatus !== "paused_daily_limit") return null;
+    let when = "";
+    if (resumeAfter) {
+      const d = new Date(resumeAfter);
+      if (!Number.isNaN(d.getTime())) {
+        when = ` (${d.toLocaleString()})`;
+      }
+    }
+    return t.thinking.paused.replace("{when}", when);
+  }, [jobStatus, resumeAfter, t.thinking.paused]);
 
   const filteredTargetLanguages = useMemo(() => {
     const q = targetLangSearch.trim().toLowerCase();
@@ -153,6 +172,8 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     setThinkingSample("");
     setActiveJobId(null);
     setReconnectedNotice(false);
+    setJobStatus(null);
+    setResumeAfter(null);
     localStorage.removeItem(ACTIVE_JOB_KEY);
   }, []);
 
@@ -171,11 +192,14 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
             completed_units?: number | null;
             current_path?: string | null;
             recent_changes?: LiveChangePreview[];
+            resume_after?: string | null;
           };
           if (!statusResp.ok) {
             throw new Error(statusJson.detail ?? t.errors.network);
           }
           failureStreak = 0;
+          setJobStatus(typeof statusJson.status === "string" ? statusJson.status : null);
+          setResumeAfter(typeof statusJson.resume_after === "string" ? statusJson.resume_after : null);
           setBackendPct(typeof statusJson.progress_pct === "number" ? statusJson.progress_pct : null);
           setCurrentPath(typeof statusJson.current_path === "string" ? statusJson.current_path : null);
           setRecentLiveChanges(Array.isArray(statusJson.recent_changes) ? statusJson.recent_changes : []);
@@ -193,17 +217,20 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
             }
           }
           if (statusJson.status === "failed") {
-            throw new Error(statusJson.error ?? statusJson.detail ?? t.errors.network);
+            throw new TerminalJobError(statusJson.error ?? statusJson.detail ?? t.errors.network);
           }
           if (statusJson.status === "cancelled") {
-            throw new Error(t.errors.cancelled);
+            throw new TerminalJobError(t.errors.cancelled);
           }
           if (statusJson.status === "completed") {
             break;
           }
           await wait(POLL_BACKOFF_MIN_MS);
         } catch (err) {
-          if (err instanceof Error && err.message === t.errors.cancelled) {
+          // Terminal states (failed/cancelled) carry the real reason the job
+          // stopped. Propagate immediately instead of retrying, otherwise the
+          // genuine error gets buried under the generic network message.
+          if (err instanceof TerminalJobError) {
             throw err;
           }
           failureStreak += 1;
@@ -696,6 +723,7 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
           recentChanges={recentLiveChanges}
           processingSpeed={processingSpeed}
           etaSeconds={etaSeconds}
+          pausedNote={pausedNote}
           onCancel={cancelProcess}
           labels={{
             title: t.thinking.title,

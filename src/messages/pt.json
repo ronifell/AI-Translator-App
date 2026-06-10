@@ -53,7 +53,8 @@
     "noRecentChanges": "Ainda não há alterações concluídas.",
     "speed": "Velocidade:",
     "eta": "Tempo restante:",
-    "cancel": "Cancelar processo"
+    "cancel": "Cancelar processo",
+    "paused": "Limite diário da API atingido. Pausado — o progresso foi salvo e será retomado automaticamente após a redefinição da cota{when}. Você pode fechar esta página com segurança."
   },
   "tabs": {
     "result": "JSON revisado",
