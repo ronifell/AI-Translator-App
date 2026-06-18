@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ReviewThinkingOverlay } from "@/components/ReviewThinkingOverlay";
 import type { Locale } from "@/lib/i18n";
-import { DEFAULT_TARGET_LANGUAGE_CODE, TARGET_LANGUAGES } from "@/lib/languages";
 import {
   ui,
   uiChangeRow,
@@ -25,19 +24,11 @@ const dictionaries: Record<Locale, Messages> = { en, pt };
 type ChangeRow = { path: string; before: string; after: string };
 type LiveChangePreview = { path: string; before_preview: string; after_preview: string };
 
-// Thrown when the backend job reaches a terminal state (failed/cancelled).
-// These must NOT be retried as transient poll failures; their message is the
-// real reason the job stopped and should be surfaced to the user immediately.
-class TerminalJobError extends Error {}
-
 const API_BASE =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL
     ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")
     : "http://127.0.0.1:8000";
 const ACTIVE_JOB_KEY = "ai-translator-active-review-job";
-const MAX_POLL_FAILURE_STREAK = 120;
-const POLL_BACKOFF_MIN_MS = 1200;
-const POLL_BACKOFF_MAX_MS = 12000;
 
 function uploadFormData(
   url: string,
@@ -76,8 +67,7 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const t = dictionaries[locale];
 
   const [file, setFile] = useState<File | null>(null);
-  const [targetLanguage, setTargetLanguage] = useState(DEFAULT_TARGET_LANGUAGE_CODE);
-  const [targetLangSearch, setTargetLangSearch] = useState("");
+  const [targetLanguage, setTargetLanguage] = useState("pt-BR");
   const [treatBiblical, setTreatBiblical] = useState(false);
   const [busy, setBusy] = useState(false);
   const [thinkingSample, setThinkingSample] = useState("");
@@ -89,8 +79,6 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const [etaSeconds, setEtaSeconds] = useState<number | null>(null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [reconnectedNotice, setReconnectedNotice] = useState(false);
-  const [jobStatus, setJobStatus] = useState<string | null>(null);
-  const [resumeAfter, setResumeAfter] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [originalJson, setOriginalJson] = useState<string | null>(null);
@@ -99,40 +87,10 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
   const [activeTab, setActiveTab] = useState<"result" | "changes" | "original">("result");
   const [diffIdx, setDiffIdx] = useState(0);
   const [diffMode, setDiffMode] = useState<"before" | "after">("after");
-  const [changeSearch, setChangeSearch] = useState("");
 
   const changeCount = changes.length;
   const uploadCtaPulse = !file ? "cta-upload-beacon" : "";
   const startCtaPulse = file && !busy ? "cta-start-beacon" : "";
-
-  const pausedNote = useMemo(() => {
-    if (jobStatus !== "paused_daily_limit") return null;
-    let when = "";
-    if (resumeAfter) {
-      const d = new Date(resumeAfter);
-      if (!Number.isNaN(d.getTime())) {
-        when = ` (${d.toLocaleString()})`;
-      }
-    }
-    return t.thinking.paused.replace("{when}", when);
-  }, [jobStatus, resumeAfter, t.thinking.paused]);
-
-  const filteredTargetLanguages = useMemo(() => {
-    const q = targetLangSearch.trim().toLowerCase();
-    let opts = [...TARGET_LANGUAGES];
-    if (q) {
-      opts = TARGET_LANGUAGES.filter(
-        (o) =>
-          o.label.toLowerCase().includes(q) ||
-          o.code.toLowerCase().includes(q),
-      );
-    }
-    const sel = TARGET_LANGUAGES.find((o) => o.code === targetLanguage);
-    if (sel && !opts.some((o) => o.code === sel.code)) {
-      opts = [sel, ...opts];
-    }
-    return opts;
-  }, [targetLangSearch, targetLanguage]);
 
   const onPick: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const f = e.target.files?.[0];
@@ -154,7 +112,6 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     setOriginalJson(text);
     try {
       JSON.parse(text);
-      setError(null);
     } catch {
       setError(t.errors.invalidJson);
     }
@@ -172,78 +129,52 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     setThinkingSample("");
     setActiveJobId(null);
     setReconnectedNotice(false);
-    setJobStatus(null);
-    setResumeAfter(null);
     localStorage.removeItem(ACTIVE_JOB_KEY);
   }, []);
 
   const pollJobUntilDone = useCallback(
     async (jobId: string, startedAtMs: number) => {
-      let failureStreak = 0;
       while (true) {
-        try {
-          const statusResp = await fetch(`${API_BASE}/api/review/jobs/${jobId}`, { cache: "no-store" });
-          const statusJson = (await statusResp.json()) as {
-            detail?: string;
-            status?: string;
-            error?: string | null;
-            progress_pct?: number;
-            total_units?: number | null;
-            completed_units?: number | null;
-            current_path?: string | null;
-            recent_changes?: LiveChangePreview[];
-            resume_after?: string | null;
-          };
-          if (!statusResp.ok) {
-            throw new Error(statusJson.detail ?? t.errors.network);
-          }
-          failureStreak = 0;
-          setJobStatus(typeof statusJson.status === "string" ? statusJson.status : null);
-          setResumeAfter(typeof statusJson.resume_after === "string" ? statusJson.resume_after : null);
-          setBackendPct(typeof statusJson.progress_pct === "number" ? statusJson.progress_pct : null);
-          setCurrentPath(typeof statusJson.current_path === "string" ? statusJson.current_path : null);
-          setRecentLiveChanges(Array.isArray(statusJson.recent_changes) ? statusJson.recent_changes : []);
-          const completedUnits =
-            typeof statusJson.completed_units === "number" ? statusJson.completed_units : null;
-          const totalUnits = typeof statusJson.total_units === "number" ? statusJson.total_units : null;
-          if (completedUnits !== null && completedUnits > 0) {
-            const elapsedSec = Math.max((Date.now() - startedAtMs) / 1000, 0.001);
-            const unitsPerSec = completedUnits / elapsedSec;
-            setProcessingSpeed(unitsPerSec);
-            if (totalUnits !== null && totalUnits >= completedUnits && unitsPerSec > 0) {
-              setEtaSeconds((totalUnits - completedUnits) / unitsPerSec);
-            } else {
-              setEtaSeconds(null);
-            }
-          }
-          if (statusJson.status === "failed") {
-            throw new TerminalJobError(statusJson.error ?? statusJson.detail ?? t.errors.network);
-          }
-          if (statusJson.status === "cancelled") {
-            throw new TerminalJobError(t.errors.cancelled);
-          }
-          if (statusJson.status === "completed") {
-            break;
-          }
-          await wait(POLL_BACKOFF_MIN_MS);
-        } catch (err) {
-          // Terminal states (failed/cancelled) carry the real reason the job
-          // stopped. Propagate immediately instead of retrying, otherwise the
-          // genuine error gets buried under the generic network message.
-          if (err instanceof TerminalJobError) {
-            throw err;
-          }
-          failureStreak += 1;
-          if (failureStreak >= MAX_POLL_FAILURE_STREAK) {
-            throw new Error(t.errors.network);
-          }
-          // Keep long-running jobs alive through temporary connectivity issues.
-          const retryDelay = Math.min(
-            POLL_BACKOFF_MIN_MS * Math.max(failureStreak, 1),
-            POLL_BACKOFF_MAX_MS,
-          );
-          await wait(retryDelay);
+        const statusResp = await fetch(`${API_BASE}/api/review/jobs/${jobId}`, { cache: "no-store" });
+        const statusJson = (await statusResp.json()) as {
+          detail?: string;
+          status?: string;
+          error?: string | null;
+          progress_pct?: number;
+          total_units?: number | null;
+          completed_units?: number | null;
+          current_path?: string | null;
+          recent_changes?: LiveChangePreview[];
+        };
+        if (!statusResp.ok) {
+          throw new Error(statusJson.detail ?? t.errors.network);
         }
+        setBackendPct(typeof statusJson.progress_pct === "number" ? statusJson.progress_pct : null);
+        setCurrentPath(typeof statusJson.current_path === "string" ? statusJson.current_path : null);
+        setRecentLiveChanges(Array.isArray(statusJson.recent_changes) ? statusJson.recent_changes : []);
+        const completedUnits =
+          typeof statusJson.completed_units === "number" ? statusJson.completed_units : null;
+        const totalUnits = typeof statusJson.total_units === "number" ? statusJson.total_units : null;
+        if (completedUnits !== null && completedUnits > 0) {
+          const elapsedSec = Math.max((Date.now() - startedAtMs) / 1000, 0.001);
+          const unitsPerSec = completedUnits / elapsedSec;
+          setProcessingSpeed(unitsPerSec);
+          if (totalUnits !== null && totalUnits >= completedUnits && unitsPerSec > 0) {
+            setEtaSeconds((totalUnits - completedUnits) / unitsPerSec);
+          } else {
+            setEtaSeconds(null);
+          }
+        }
+        if (statusJson.status === "failed") {
+          throw new Error(statusJson.error ?? statusJson.detail ?? t.errors.network);
+        }
+        if (statusJson.status === "cancelled") {
+          throw new Error(t.errors.cancelled);
+        }
+        if (statusJson.status === "completed") {
+          break;
+        }
+        await wait(1200);
       }
     },
     [t.errors.cancelled, t.errors.network],
@@ -259,11 +190,6 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     setChanges([]);
     try {
       const rawJson = await readOriginal();
-      try {
-        JSON.parse(rawJson);
-      } catch {
-        return;
-      }
       setThinkingSample(rawJson);
       setBusy(true);
       setUploadPct(0);
@@ -337,29 +263,13 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
     resetLiveProgress();
   }, [resetLiveProgress]);
 
-  const filteredChanges = useMemo(() => {
-    const q = changeSearch.trim().toLowerCase();
-    if (!q) return changes;
-    return changes.filter((c) => {
-      return (
-        c.path.toLowerCase().includes(q) ||
-        c.before.toLowerCase().includes(q) ||
-        c.after.toLowerCase().includes(q)
-      );
-    });
-  }, [changeSearch, changes]);
-
   const diffSnippet = useMemo(() => {
-    const row = filteredChanges[diffIdx];
+    const row = changes[diffIdx];
     if (!row) return null;
     const text = diffMode === "before" ? row.before : row.after;
     const max = 12000;
     return text.length > max ? `${text.slice(0, max)}\n…` : text;
-  }, [diffIdx, diffMode, filteredChanges]);
-
-  useEffect(() => {
-    setDiffIdx(0);
-  }, [changeSearch, changes]);
+  }, [changes, diffIdx, diffMode]);
 
   useEffect(() => {
     const raw = localStorage.getItem(ACTIVE_JOB_KEY);
@@ -496,27 +406,14 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
           <section className={`${ui.card} flex min-h-0 flex-[1.25_1_0%] flex-col overflow-hidden p-5 sm:p-6`}>
             <h2 className={ui.heading}>{t.options.title}</h2>
             <label className={`${ui.label} mt-4 block`}>{t.options.targetLang}</label>
-            <input
-              type="search"
-              className={`${ui.field} mt-2 ${ui.focusRing}`}
-              value={targetLangSearch}
-              onChange={(e) => setTargetLangSearch(e.target.value)}
-              placeholder={t.options.targetLangSearch}
-              aria-label={t.options.targetLangSearch}
-              autoComplete="off"
-              spellCheck={false}
-            />
             <select
               className={`${ui.field} mt-2 ${ui.focusRing}`}
               value={targetLanguage}
               onChange={(e) => setTargetLanguage(e.target.value)}
-              aria-label={t.options.targetLang}
             >
-              {filteredTargetLanguages.map((o) => (
-                <option key={o.code} value={o.code}>
-                  {o.label} ({o.code})
-                </option>
-              ))}
+              <option value="pt-BR">pt-BR</option>
+              <option value="en">en</option>
+              <option value="es">es</option>
             </select>
             <p className={`${ui.muted} mt-2`}>{t.options.targetLangHint}</p>
             <label className="mt-4 flex cursor-pointer items-start gap-3.5 rounded-xl border border-slate-200/80 bg-slate-50/80 p-3.5 text-sm text-slate-700 transition hover:border-indigo-200 hover:bg-white dark:border-slate-700/80 dark:bg-slate-950/40 dark:text-slate-300 dark:hover:border-indigo-500/40 dark:hover:bg-slate-900/60">
@@ -615,28 +512,11 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
             {activeTab === "changes" && (
               <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
                 <div className="min-h-0 w-[38%] flex-[0_0_38%] overflow-hidden">
-                  <div className="mb-2">
-                    <input
-                      type="search"
-                      className={`${ui.field} ${ui.focusRing}`}
-                      value={changeSearch}
-                      onChange={(e) => setChangeSearch(e.target.value)}
-                      placeholder={t.diff.searchPlaceholder}
-                      aria-label={t.diff.searchPlaceholder}
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                    <p className={`${ui.muted} mt-1 text-[0.7rem]`}>
-                      {t.changes.filtered
-                        .replace("{shown}", String(filteredChanges.length))
-                        .replace("{total}", String(changes.length))}
-                    </p>
-                  </div>
-                  {filteredChanges.length === 0 ? (
+                  {changes.length === 0 ? (
                     <p className={`${ui.muted} text-sm`}>{t.changes.empty}</p>
                   ) : (
                     <ul className="h-full overflow-y-auto overflow-x-hidden pr-1 text-xs">
-                      {filteredChanges.map((c, i) => (
+                      {changes.map((c, i) => (
                         <li key={`${c.path}-${i}`}>
                           <button
                             type="button"
@@ -723,7 +603,6 @@ export function ReviewWorkspace({ locale }: { locale: Locale }) {
           recentChanges={recentLiveChanges}
           processingSpeed={processingSpeed}
           etaSeconds={etaSeconds}
-          pausedNote={pausedNote}
           onCancel={cancelProcess}
           labels={{
             title: t.thinking.title,

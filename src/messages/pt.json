@@ -27,7 +27,6 @@
     "title": "Opções de revisão",
     "targetLang": "Idioma alvo (dica para a IA)",
     "targetLangHint": "Usado para correções mínimas de trechos no idioma errado.",
-    "targetLangSearch": "Buscar idioma ou código…",
     "treatBiblical": "Tratar todo texto bíblico (campo \"texto\") como traduzido pelo Google",
     "treatBiblicalHint": "Use quando o JSON não tiver metadados (traduzido_google, fonte, etc.). Caso contrário, só \"texto\" marcado como Google ou após \"1. Esra\" é revisado."
   },
@@ -53,8 +52,7 @@
     "noRecentChanges": "Ainda não há alterações concluídas.",
     "speed": "Velocidade:",
     "eta": "Tempo restante:",
-    "cancel": "Cancelar processo",
-    "paused": "Limite diário da API atingido. Pausado — o progresso foi salvo e será retomado automaticamente após a redefinição da cota{when}. Você pode fechar esta página com segurança."
+    "cancel": "Cancelar processo"
   },
   "tabs": {
     "result": "JSON revisado",
@@ -66,14 +64,12 @@
     "path": "Caminho",
     "before": "Antes",
     "after": "Depois",
-    "filtered": "Mostrando {shown} de {total} alterações",
     "empty": "Nenhuma alteração registrada (texto já estava correto ou nada foi elegível para revisão)."
   },
   "diff": {
     "toggle": "Comparar antes/depois",
     "showOriginal": "Mostrar original",
-    "showCorrected": "Mostrar corrigido",
-    "searchPlaceholder": "Buscar em caminho / original / corrigido (ex.: the)"
+    "showCorrected": "Mostrar corrigido"
   },
   "errors": {
     "noFile": "Selecione um arquivo JSON.",

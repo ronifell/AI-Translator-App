@@ -27,7 +27,6 @@
     "title": "Review options",
     "targetLang": "Target language (hint for the model)",
     "targetLangHint": "Used for minimal fixes when a short passage is in the wrong language.",
-    "targetLangSearch": "Search language or code…",
     "treatBiblical": "Treat all biblical \"texto\" fields as Google-translated",
     "treatBiblicalHint": "Use when your JSON lacks metadata (traduzido_google, fonte, etc.). Otherwise only Google-marked \"texto\" or content after \"1. Esra\" is reviewed."
   },
@@ -53,8 +52,7 @@
     "noRecentChanges": "No completed changes yet.",
     "speed": "Speed:",
     "eta": "ETA:",
-    "cancel": "Cancel Process",
-    "paused": "Daily API limit reached. Paused — progress is saved and will resume automatically after the quota resets{when}. You can safely close this page."
+    "cancel": "Cancel Process"
   },
   "tabs": {
     "result": "Reviewed JSON",
@@ -66,14 +64,12 @@
     "path": "Path",
     "before": "Before",
     "after": "After",
-    "filtered": "Showing {shown} of {total} changes",
     "empty": "No changes recorded (text was already acceptable or nothing was eligible)."
   },
   "diff": {
     "toggle": "Compare before / after",
     "showOriginal": "Show original",
-    "showCorrected": "Show corrected",
-    "searchPlaceholder": "Search in path / original / corrected (e.g. the)"
+    "showCorrected": "Show corrected"
   },
   "errors": {
     "noFile": "Select a JSON file.",
