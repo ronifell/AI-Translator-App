@@ -1,0 +1,8 @@
+{
+  "input_path": "E:\\E disk\\Ronifell Data\\My projects\\AI translator\\frontend\\biblia-de-3.json",
+  "output_path": "E:\\E disk\\Ronifell Data\\My projects\\AI translator\\frontend\\biblia-de-3.json",
+  "next_livro_index": 0,
+  "livro_end": 80,
+  "updated_at": 1777825181,
+  "last_error": "Error code: 403 - {'error': {'code': 'unsupported_country_region_territory', 'message': 'Country, region, or territory not supported', 'param': None, 'type': 'request_forbidden'}}"
+}

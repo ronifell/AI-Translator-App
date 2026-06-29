@@ -31,6 +31,7 @@ type Props = {
   recentChanges: LiveChange[];
   processingSpeed: number | null;
   etaSeconds: number | null;
+  pausedNote: string | null;
   onCancel: () => void;
   labels: ThinkingLabels;
 };
@@ -96,6 +97,7 @@ export function ReviewThinkingOverlay({
   recentChanges,
   processingSpeed,
   etaSeconds,
+  pausedNote,
   onCancel,
   labels,
 }: Props) {
@@ -229,6 +231,12 @@ export function ReviewThinkingOverlay({
             {labels.eta} <span className="font-mono">{etaLabel}</span>
           </p>
         </div>
+
+        {pausedNote && (
+          <div className="mb-4 w-full rounded-2xl border border-amber-400/80 bg-amber-50/90 p-3 text-center text-xs font-medium text-amber-800 shadow-sm dark:border-amber-500/60 dark:bg-amber-950/40 dark:text-amber-200">
+            {pausedNote}
+          </div>
+        )}
 
         {/* Flowing JSON — fixed height (stable center); wrap long lines; no horizontal scrollbar */}
         <pre
